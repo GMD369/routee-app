@@ -38,16 +38,11 @@ export interface SavedLocationInput {
   is_default?: boolean;
 }
 
-const PROFILE_ENDPOINTS = [
-  "/rider/me",
-  "/riders/me",
-  "/rider/profile",
-  "/me",
-] as const;
-const LOCATION_BASE_ENDPOINTS = [
-  "/rider/locations",
-  "/rider/location",
-] as const;
+const PROFILE_ENDPOINTS = ["/riders/me"] as const;
+const LOCATION_CREATE_ENDPOINTS = ["/riders/me/locations"] as const;
+const LOCATION_UPDATE_BASE_ENDPOINTS = ["/riders/me/locations"] as const;
+const LOCATION_DELETE_BASE_ENDPOINTS = ["/riders/me/locations"] as const;
+const LOCATION_LIST_ENDPOINTS = ["/riders/me/locations"] as const;
 
 const DEFAULT_PREFERENCES: RiderPreferences = {
   uni_student: false,
@@ -137,9 +132,73 @@ async function tryPut<T>(paths: readonly string[], body: unknown): Promise<T> {
   );
 }
 
+async function tryPost<T>(paths: readonly string[], body: unknown): Promise<T> {
+  let lastError: unknown = null;
+
+  for (const path of paths) {
+    try {
+      const response = await http.post<T>(path, body);
+      return response.data;
+    } catch (error) {
+      if (error instanceof HttpError && error.status && error.status !== 404) {
+        throw error;
+      }
+      lastError = error;
+    }
+  }
+
+  throw (
+    lastError ||
+    new HttpError("Saved location create endpoint not found", {
+      status: 404,
+    })
+  );
+}
+
+async function tryDelete(paths: readonly string[]): Promise<void> {
+  let lastError: unknown = null;
+
+  for (const path of paths) {
+    try {
+      await http.delete<null>(path);
+      return;
+    } catch (error) {
+      if (error instanceof HttpError && error.status && error.status !== 404) {
+        throw error;
+      }
+      lastError = error;
+    }
+  }
+
+  throw (
+    lastError ||
+    new HttpError("Saved location delete endpoint not found", {
+      status: 404,
+    })
+  );
+}
+
 export async function getMyRiderProfile() {
-  const profile = await tryGet<RiderProfile>(PROFILE_ENDPOINTS);
-  return normalizeProfile(profile);
+  const profile = normalizeProfile(
+    await tryGet<RiderProfile>(PROFILE_ENDPOINTS),
+  );
+
+  try {
+    const savedLocations = await tryGet<SavedLocation[]>(
+      LOCATION_LIST_ENDPOINTS,
+    );
+    return {
+      ...profile,
+      saved_locations: Array.isArray(savedLocations) ? savedLocations : [],
+    };
+  } catch {
+    return profile;
+  }
+}
+
+export async function getMySavedLocations() {
+  const savedLocations = await tryGet<SavedLocation[]>(LOCATION_LIST_ENDPOINTS);
+  return Array.isArray(savedLocations) ? savedLocations : [];
 }
 
 export async function updateRiderPreferences(preferences: RiderPreferences) {
@@ -159,17 +218,12 @@ export async function saveOrUpdateSavedLocation(
   );
 
   if (!existing) {
-    const response = await http.post<SavedLocation>(
-      LOCATION_BASE_ENDPOINTS[0],
-      input,
-    );
-    return response.data;
+    return tryPost<SavedLocation>(LOCATION_CREATE_ENDPOINTS, input);
   }
 
-  const updatePaths = [
-    `${LOCATION_BASE_ENDPOINTS[0]}/${existing.id}`,
-    `${LOCATION_BASE_ENDPOINTS[1]}/${existing.id}`,
-  ] as const;
+  const updatePaths = LOCATION_UPDATE_BASE_ENDPOINTS.map(
+    (basePath) => `${basePath}/${existing.id}`,
+  );
 
   let lastError: unknown = null;
 
@@ -212,4 +266,17 @@ export async function saveOrUpdateSavedLocation(
       status: 404,
     })
   );
+}
+
+export async function deleteSavedLocation(locationId: string) {
+  const id = locationId.trim();
+  if (!id) {
+    throw new Error("Location ID is required.");
+  }
+
+  const deletePaths = LOCATION_DELETE_BASE_ENDPOINTS.map(
+    (basePath) => `${basePath}/${id}`,
+  );
+
+  await tryDelete(deletePaths);
 }

@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { clearSession, getApiErrorMessage, loadSession } from "../../lib/auth";
 import {
+    deleteSavedLocation,
     getMyRiderProfile,
     RiderPreferences,
     RiderProfile,
@@ -27,6 +28,9 @@ export default function AccountTabScreen() {
   const [savingLocation, setSavingLocation] = useState<"home" | "work" | null>(
     null,
   );
+  const [deletingLocation, setDeletingLocation] = useState<
+    "home" | "work" | null
+  >(null);
 
   const [profile, setProfile] = useState<RiderProfile | null>(null);
 
@@ -175,6 +179,36 @@ export default function AccountTabScreen() {
     router.push("/login");
   }
 
+  async function onDeleteLocation(kind: "home" | "work") {
+    if (!profile) {
+      Alert.alert("Not ready", "Profile is still loading.");
+      return;
+    }
+
+    const target = profile.saved_locations.find(
+      (location) => location.name.trim().toLowerCase() === kind,
+    );
+
+    if (!target) {
+      Alert.alert(
+        "Nothing to delete",
+        `No saved ${kind === "home" ? "Home" : "Work"} location found.`,
+      );
+      return;
+    }
+
+    setDeletingLocation(kind);
+    try {
+      await deleteSavedLocation(target.id);
+      await fetchProfile();
+      Alert.alert("Deleted", `${kind === "home" ? "Home" : "Work"} removed.`);
+    } catch (error) {
+      Alert.alert("Delete failed", getApiErrorMessage(error));
+    } finally {
+      setDeletingLocation(null);
+    }
+  }
+
   if (!sessionChecked || loading) {
     return (
       <View className="flex-1 items-center justify-center bg-slate-950">
@@ -301,6 +335,9 @@ export default function AccountTabScreen() {
         saveText="Save Home"
         onSave={() => void onSaveLocation("home")}
         loading={savingLocation === "home"}
+        deleting={deletingLocation === "home"}
+        onDelete={() => void onDeleteLocation("home")}
+        deleteText="Delete Home"
       />
 
       <LocationEditor
@@ -314,6 +351,9 @@ export default function AccountTabScreen() {
         saveText="Save Work"
         onSave={() => void onSaveLocation("work")}
         loading={savingLocation === "work"}
+        deleting={deletingLocation === "work"}
+        onDelete={() => void onDeleteLocation("work")}
+        deleteText="Delete Work"
       />
 
       <Pressable
@@ -368,6 +408,9 @@ type LocationEditorProps = {
   saveText: string;
   onSave: () => void;
   loading: boolean;
+  deleting: boolean;
+  onDelete: () => void;
+  deleteText: string;
 };
 
 function LocationEditor({
@@ -381,6 +424,9 @@ function LocationEditor({
   saveText,
   onSave,
   loading,
+  deleting,
+  onDelete,
+  deleteText,
 }: LocationEditorProps) {
   return (
     <View className="mt-7 rounded-2xl border border-slate-800 bg-slate-900 p-4">
@@ -411,7 +457,7 @@ function LocationEditor({
 
       <Pressable
         onPress={onSave}
-        disabled={loading}
+        disabled={loading || deleting}
         className="mt-4 items-center rounded-xl border border-white bg-white px-4 py-3"
       >
         {loading ? (
@@ -419,6 +465,20 @@ function LocationEditor({
         ) : (
           <Text className="text-base font-semibold text-slate-950">
             {saveText}
+          </Text>
+        )}
+      </Pressable>
+
+      <Pressable
+        onPress={onDelete}
+        disabled={loading || deleting}
+        className="mt-3 items-center rounded-xl border border-rose-400/50 bg-rose-900/20 px-4 py-3"
+      >
+        {deleting ? (
+          <ActivityIndicator color="#fecaca" />
+        ) : (
+          <Text className="text-base font-semibold text-rose-200">
+            {deleteText}
           </Text>
         )}
       </Pressable>
