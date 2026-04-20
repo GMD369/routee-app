@@ -89,8 +89,20 @@ async function request<T>(path: string, options: RequestOptions) {
 }
 
 export const http = {
+  get<T>(path: string) {
+    return request<T>(path, { method: "GET" });
+  },
   post<T>(path: string, body?: unknown) {
     return request<T>(path, { method: "POST", body });
+  },
+  put<T>(path: string, body?: unknown) {
+    return request<T>(path, { method: "PUT", body });
+  },
+  patch<T>(path: string, body?: unknown) {
+    return request<T>(path, { method: "PATCH", body });
+  },
+  delete<T>(path: string) {
+    return request<T>(path, { method: "DELETE" });
   },
 };
 
