@@ -9,8 +9,14 @@ export type UserRole = "rider" | "driver";
 export interface AuthResponse {
   access_token: string;
   refresh_token: string;
+  token_type?: string;
   user_id: string;
   roles: UserRole[];
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
 }
 
 export interface RiderRegisterRequest {
@@ -44,6 +50,11 @@ export async function registerDriver(payload: DriverRegisterRequest) {
     "/auth/register/driver",
     payload,
   );
+  return response.data;
+}
+
+export async function login(payload: LoginRequest) {
+  const response = await http.post<AuthResponse>("/auth/login", payload);
   return response.data;
 }
 

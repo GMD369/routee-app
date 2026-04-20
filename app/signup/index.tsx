@@ -192,6 +192,15 @@ export default function SignupScreen() {
           </Text>
         )}
       </Pressable>
+
+      <Pressable
+        onPress={() => router.push("/login")}
+        className="mt-4 items-center rounded-2xl border border-slate-700 bg-slate-900 px-5 py-4"
+      >
+        <Text className="text-base font-semibold text-slate-100">
+          Already have an account? Login
+        </Text>
+      </Pressable>
     </ScrollView>
   );
 }

@@ -14,6 +14,17 @@ export default function AccountTabScreen() {
 
       <View className="mt-7 gap-4">
         <Text className="text-xs uppercase tracking-[2px] text-slate-400">
+          Existing Account
+        </Text>
+
+        <Link
+          href="/login"
+          className="rounded-2xl border border-slate-600 bg-slate-900 px-5 py-4 text-center text-lg font-semibold text-slate-100"
+        >
+          Login
+        </Link>
+
+        <Text className="text-xs uppercase tracking-[2px] text-slate-400">
           Create New Account
         </Text>
 
