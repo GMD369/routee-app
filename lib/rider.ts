@@ -93,20 +93,38 @@ async function tryGet<T>(paths: readonly string[]): Promise<T> {
   );
 }
 
-async function tryPatch<T>(
-  paths: readonly string[],
-  body: unknown,
-): Promise<T> {
+async function tryPut<T>(paths: readonly string[], body: unknown): Promise<T> {
   let lastError: unknown = null;
 
   for (const path of paths) {
     try {
-      const response = await http.patch<T>(path, body);
+      const response = await http.put<T>(path, body);
       return response.data;
     } catch (error) {
-      if (error instanceof HttpError && error.status && error.status !== 404) {
-        throw error;
+      if (error instanceof HttpError) {
+        if (error.status === 404 || error.status === 405) {
+          try {
+            const fallback = await http.patch<T>(path, body);
+            return fallback.data;
+          } catch (patchError) {
+            if (
+              patchError instanceof HttpError &&
+              patchError.status &&
+              patchError.status !== 404 &&
+              patchError.status !== 405
+            ) {
+              throw patchError;
+            }
+            lastError = patchError;
+            continue;
+          }
+        }
+
+        if (error.status && error.status !== 404) {
+          throw error;
+        }
       }
+
       lastError = error;
     }
   }
@@ -125,7 +143,7 @@ export async function getMyRiderProfile() {
 }
 
 export async function updateRiderPreferences(preferences: RiderPreferences) {
-  const updated = await tryPatch<RiderProfile>(PROFILE_ENDPOINTS, {
+  const updated = await tryPut<RiderProfile>(PROFILE_ENDPOINTS, {
     preferences,
   });
   return normalizeProfile(updated);
