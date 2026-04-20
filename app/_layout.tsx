@@ -1,6 +1,12 @@
-import { Stack } from "expo-router";
 import "@/global.css";
+import { Stack } from "expo-router";
 
 export default function RootLayout() {
-  return <Stack />;
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="signup/rider" options={{ title: "Rider Signup" }} />
+      <Stack.Screen name="signup/driver" options={{ title: "Driver Signup" }} />
+    </Stack>
+  );
 }
