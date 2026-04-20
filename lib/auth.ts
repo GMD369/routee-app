@@ -1,6 +1,6 @@
-import { AxiosError } from "axios";
 import * as SecureStore from "expo-secure-store";
-import { http, setAuthToken } from "./http";
+import { API_BASE_URL } from "./config";
+import { http, HttpError, setAuthToken } from "./http";
 
 const SESSION_KEY = "routee.auth.session";
 
@@ -67,10 +67,22 @@ export async function clearSession() {
 }
 
 export function getApiErrorMessage(error: unknown) {
-  if (error instanceof AxiosError) {
-    const detail = error.response?.data?.detail;
-    if (typeof detail === "string" && detail.length > 0) return detail;
-    if (error.message) return error.message;
+  if (error instanceof HttpError) {
+    const detail =
+      typeof error.data === "object" &&
+      error.data &&
+      "detail" in error.data &&
+      typeof (error.data as { detail?: unknown }).detail === "string"
+        ? (error.data as { detail: string }).detail
+        : null;
+
+    if (detail) return detail;
+
+    if (error.isNetworkError) {
+      return `Cannot reach backend. Check API URL (${API_BASE_URL}) and ensure the phone/emulator can access your server.`;
+    }
+
+    return error.message;
   }
 
   if (error instanceof Error) return error.message;

@@ -1,8 +1,12 @@
+import DateTimePicker, {
+    DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
     ActivityIndicator,
     Alert,
+    Platform,
     Pressable,
     ScrollView,
     Text,
@@ -21,10 +25,21 @@ export default function RiderSignupScreen() {
   const [loading, setLoading] = useState(false);
 
   async function onSubmit() {
-    if (!fullName || !email || !phone || !password) {
-      Alert.alert("Missing fields", "Please fill all required fields.");
+    const validationError = validateRiderInput({
+      fullName,
+      email,
+      phone,
+      password,
+      gender,
+      dateOfBirth,
+    });
+
+    if (validationError) {
+      Alert.alert("Invalid input", validationError);
       return;
     }
+
+    const normalizedGender = gender.trim().toLowerCase();
 
     setLoading(true);
     try {
@@ -33,7 +48,7 @@ export default function RiderSignupScreen() {
         email: email.trim(),
         phone: phone.trim(),
         password,
-        gender: gender.trim() || undefined,
+        gender: normalizedGender || undefined,
         date_of_birth: dateOfBirth.trim() || undefined,
       });
 
@@ -82,6 +97,7 @@ export default function RiderSignupScreen() {
           value={phone}
           onChangeText={setPhone}
           keyboardType="phone-pad"
+          placeholder="+923001234567"
         />
         <Field
           label="Password *"
@@ -89,14 +105,10 @@ export default function RiderSignupScreen() {
           onChangeText={setPassword}
           secureTextEntry
           autoCapitalize="none"
+          placeholder="Minimum 8 characters"
         />
-        <Field label="Gender" value={gender} onChangeText={setGender} />
-        <Field
-          label="Date of Birth (YYYY-MM-DD)"
-          value={dateOfBirth}
-          onChangeText={setDateOfBirth}
-          autoCapitalize="none"
-        />
+        <GenderField label="Gender" value={gender} onChange={setGender} />
+        <DateOfBirthField value={dateOfBirth} onChange={setDateOfBirth} />
       </View>
 
       <Pressable
@@ -123,6 +135,7 @@ type FieldProps = {
   keyboardType?: "default" | "email-address" | "phone-pad";
   autoCapitalize?: "none" | "sentences" | "words" | "characters";
   secureTextEntry?: boolean;
+  placeholder?: string;
 };
 
 function Field({
@@ -132,6 +145,7 @@ function Field({
   keyboardType = "default",
   autoCapitalize = "sentences",
   secureTextEntry = false,
+  placeholder,
 }: FieldProps) {
   return (
     <View>
@@ -142,9 +156,194 @@ function Field({
         keyboardType={keyboardType}
         autoCapitalize={autoCapitalize}
         secureTextEntry={secureTextEntry}
+        placeholder={placeholder}
         placeholderTextColor="#64748b"
         className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-base text-white"
       />
     </View>
   );
+}
+
+type DateOfBirthFieldProps = {
+  value: string;
+  onChange: (value: string) => void;
+};
+
+const GENDER_OPTIONS = ["male", "female", "other"] as const;
+type GenderOption = (typeof GENDER_OPTIONS)[number];
+
+type GenderFieldProps = {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+};
+
+function GenderField({ label, value, onChange }: GenderFieldProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const selectedGender =
+    GENDER_OPTIONS.find((option) => option === value) || "";
+
+  function onSelect(option: GenderOption) {
+    onChange(option);
+    setIsOpen(false);
+  }
+
+  return (
+    <View>
+      <Text className="mb-2 text-sm font-medium text-slate-200">{label}</Text>
+
+      <Pressable
+        onPress={() => setIsOpen((current) => !current)}
+        className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3"
+      >
+        <Text
+          className={`text-base ${selectedGender ? "text-white" : "text-slate-400"}`}
+        >
+          {selectedGender ? formatGenderLabel(selectedGender) : "Select gender"}
+        </Text>
+      </Pressable>
+
+      {isOpen ? (
+        <View className="mt-2 overflow-hidden rounded-xl border border-slate-700 bg-slate-900">
+          {GENDER_OPTIONS.map((option) => {
+            const isSelected = selectedGender === option;
+
+            return (
+              <Pressable
+                key={option}
+                onPress={() => onSelect(option)}
+                className={`px-4 py-3 ${isSelected ? "bg-cyan-400" : "bg-slate-900"}`}
+              >
+                <Text
+                  className={`text-base font-medium ${
+                    isSelected ? "text-slate-950" : "text-slate-200"
+                  }`}
+                >
+                  {formatGenderLabel(option)}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function DateOfBirthField({ value, onChange }: DateOfBirthFieldProps) {
+  const [isPickerVisible, setPickerVisible] = useState(false);
+
+  function onDateChange(event: DateTimePickerEvent, selectedDate?: Date) {
+    if (Platform.OS === "android") {
+      setPickerVisible(false);
+    }
+
+    if (event.type === "dismissed" || !selectedDate) {
+      return;
+    }
+
+    onChange(formatDateForApi(selectedDate));
+  }
+
+  const pickerValue = value
+    ? new Date(`${value}T00:00:00`)
+    : new Date(2000, 0, 1);
+
+  return (
+    <View>
+      <Text className="mb-2 text-sm font-medium text-slate-200">
+        Date of Birth
+      </Text>
+
+      <Pressable
+        onPress={() => setPickerVisible(true)}
+        className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3"
+      >
+        <Text
+          className={`text-base ${value ? "text-white" : "text-slate-400"}`}
+        >
+          {value || "Select date"}
+        </Text>
+      </Pressable>
+
+      {isPickerVisible ? (
+        <View className="mt-2 rounded-xl border border-slate-700 bg-slate-900 px-2 py-2">
+          <DateTimePicker
+            value={pickerValue}
+            mode="date"
+            display={Platform.OS === "ios" ? "spinner" : "default"}
+            maximumDate={new Date()}
+            onChange={onDateChange}
+          />
+
+          {Platform.OS === "ios" ? (
+            <Pressable
+              onPress={() => setPickerVisible(false)}
+              className="mt-2 items-center rounded-lg bg-slate-800 py-2"
+            >
+              <Text className="font-semibold text-cyan-300">Done</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function formatDateForApi(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function formatGenderLabel(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function validateRiderInput(input: {
+  fullName: string;
+  email: string;
+  phone: string;
+  password: string;
+  gender: string;
+  dateOfBirth: string;
+}) {
+  const fullName = input.fullName.trim();
+  const email = input.email.trim();
+  const phone = input.phone.trim();
+  const password = input.password;
+  const gender = input.gender.trim().toLowerCase();
+  const dateOfBirth = input.dateOfBirth.trim();
+
+  if (!fullName || fullName.length < 2 || fullName.length > 100) {
+    return "Full name must be between 2 and 100 characters.";
+  }
+
+  if (!email) {
+    return "Email is required.";
+  }
+
+  if (!phone) {
+    return "Phone is required.";
+  }
+
+  if (!/^\+\d{10,15}$/.test(phone)) {
+    return "Phone must be in E.164 format, e.g. +923001234567.";
+  }
+
+  if (!password || password.length < 8) {
+    return "Password must be at least 8 characters.";
+  }
+
+  if (gender && !/^(male|female|other)$/.test(gender)) {
+    return "Gender must be one of: male, female, other.";
+  }
+
+  if (dateOfBirth && !/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth)) {
+    return "Date of birth must be in YYYY-MM-DD format.";
+  }
+
+  return null;
 }
