@@ -5,7 +5,9 @@ import {
     Alert,
     Pressable,
     ScrollView,
+    Switch,
     Text,
+    TextInput,
     View,
 } from "react-native";
 import {
@@ -14,14 +16,28 @@ import {
     getPrimaryRole,
     loadSession,
 } from "../lib/auth";
-import { DriverProfile, getMyDriverProfile } from "../lib/driver";
+import {
+    DriverPreferences,
+    DriverProfile,
+    getMyDriverProfile,
+    updateMyDriverProfile,
+} from "../lib/driver";
 
 export default function DriverProfileScreen() {
   const [sessionChecked, setSessionChecked] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isDriver, setIsDriver] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<DriverProfile | null>(null);
+  const [bio, setBio] = useState("");
+  const [preferences, setPreferences] = useState<DriverPreferences>({
+    music: false,
+    smoking: false,
+    pets: false,
+    ac: true,
+    talking: true,
+  });
 
   useEffect(() => {
     void initialize();
@@ -46,6 +62,16 @@ export default function DriverProfileScreen() {
       if (hasDriverRole) {
         const driverProfile = await getMyDriverProfile();
         setProfile(driverProfile);
+        setBio(driverProfile.bio || "");
+        setPreferences(
+          driverProfile.preferences || {
+            music: false,
+            smoking: false,
+            pets: false,
+            ac: true,
+            talking: true,
+          },
+        );
       }
     } catch (error) {
       Alert.alert("Profile error", getApiErrorMessage(error));
@@ -73,6 +99,42 @@ export default function DriverProfileScreen() {
       router.replace("/login");
     } catch (error) {
       Alert.alert("Logout failed", getApiErrorMessage(error));
+    }
+  }
+
+  function setPreferenceFlag<K extends keyof DriverPreferences>(
+    key: K,
+    value: DriverPreferences[K],
+  ) {
+    setPreferences((current) => ({ ...current, [key]: value }));
+  }
+
+  async function onSaveDriverProfile() {
+    const trimmedBio = bio.trim();
+
+    if (trimmedBio.length > 500) {
+      Alert.alert("Invalid bio", "Bio must be 500 characters or less.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const updated = await updateMyDriverProfile({
+        preferences,
+        bio: trimmedBio || undefined,
+      });
+
+      setProfile((current) => ({
+        ...updated,
+        profiles: updated.profiles || current?.profiles,
+      }));
+      setBio(updated.bio || "");
+      setPreferences(updated.preferences || preferences);
+      Alert.alert("Saved", "Driver profile updated successfully.");
+    } catch (error) {
+      Alert.alert("Update failed", getApiErrorMessage(error));
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -176,6 +238,71 @@ export default function DriverProfileScreen() {
         </View>
       </View>
 
+      <View className="mt-5 rounded-2xl border border-slate-800 bg-slate-900 p-4">
+        <Text className="text-sm font-semibold text-slate-200">
+          Driver Preferences
+        </Text>
+
+        <View className="mt-3 gap-3">
+          <PreferenceRow
+            label="Music"
+            value={preferences.music}
+            onValueChange={(value) => setPreferenceFlag("music", value)}
+          />
+          <PreferenceRow
+            label="Smoking"
+            value={preferences.smoking}
+            onValueChange={(value) => setPreferenceFlag("smoking", value)}
+          />
+          <PreferenceRow
+            label="Pets"
+            value={preferences.pets}
+            onValueChange={(value) => setPreferenceFlag("pets", value)}
+          />
+          <PreferenceRow
+            label="AC"
+            value={preferences.ac}
+            onValueChange={(value) => setPreferenceFlag("ac", value)}
+          />
+          <PreferenceRow
+            label="Talking"
+            value={preferences.talking}
+            onValueChange={(value) => setPreferenceFlag("talking", value)}
+          />
+        </View>
+
+        <Text className="mb-2 mt-4 text-sm font-medium text-slate-200">
+          Bio
+        </Text>
+        <TextInput
+          value={bio}
+          onChangeText={setBio}
+          multiline
+          maxLength={500}
+          textAlignVertical="top"
+          placeholder="Tell riders about your driving style"
+          placeholderTextColor="#64748b"
+          className="min-h-28 rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-base text-white"
+        />
+        <Text className="mt-2 text-right text-xs text-slate-400">
+          {bio.length}/500
+        </Text>
+
+        <Pressable
+          onPress={() => void onSaveDriverProfile()}
+          disabled={saving}
+          className="mt-4 items-center rounded-xl bg-cyan-400 px-4 py-3"
+        >
+          {saving ? (
+            <ActivityIndicator color="#0f172a" />
+          ) : (
+            <Text className="text-base font-semibold text-slate-950">
+              Save Driver Profile
+            </Text>
+          )}
+        </Pressable>
+      </View>
+
       <Pressable
         onPress={() => void onLogout()}
         className="mt-8 items-center rounded-2xl border border-rose-400/50 bg-rose-900/20 px-5 py-4"
@@ -221,6 +348,23 @@ function Stat({ label, value }: StatProps) {
     <View className="items-start">
       <Text className="text-xl font-black text-white">{value}</Text>
       <Text className="mt-1 text-xs text-slate-400">{label}</Text>
+    </View>
+  );
+}
+
+type PreferenceRowProps = {
+  label: string;
+  value: boolean;
+  onValueChange: (value: boolean) => void;
+};
+
+function PreferenceRow({ label, value, onValueChange }: PreferenceRowProps) {
+  return (
+    <View className="flex-row items-center justify-between rounded-xl border border-slate-800 bg-slate-950 px-3 py-3">
+      <Text className="mr-3 flex-1 text-sm font-medium text-slate-200">
+        {label}
+      </Text>
+      <Switch value={value} onValueChange={onValueChange} />
     </View>
   );
 }
