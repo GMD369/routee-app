@@ -91,6 +91,8 @@ export default function DriverProfileScreen() {
     };
   }, [profile]);
 
+  const isVerified = profile?.verification_status === "verified";
+
   async function onLogout() {
     try {
       await clearSession();
@@ -226,6 +228,34 @@ export default function DriverProfileScreen() {
           {summary?.status || "Unknown"}
         </Text>
       </View>
+
+      {!isVerified ? (
+        <View className="mt-5 rounded-2xl border border-amber-500/30 bg-amber-950/20 p-4">
+          <Text className="text-sm font-semibold text-amber-200">
+            Verification Required
+          </Text>
+          <Text className="mt-2 text-sm leading-5 text-slate-200">
+            Please verify your account to continue as an active driver.
+          </Text>
+          <Pressable
+            onPress={() => router.push("/driver-verification")}
+            className="mt-3 items-center rounded-xl bg-amber-400 px-4 py-3"
+          >
+            <Text className="text-base font-semibold text-amber-950">
+              Please Verify
+            </Text>
+          </Pressable>
+        </View>
+      ) : (
+        <View className="mt-5 rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-4">
+          <Text className="text-sm font-semibold text-emerald-200">
+            Verification Complete
+          </Text>
+          <Text className="mt-2 text-sm leading-5 text-slate-200">
+            Your account is verified. No further action is needed.
+          </Text>
+        </View>
+      )}
 
       <View className="mt-5 rounded-2xl border border-slate-800 bg-slate-900 p-4">
         <Text className="text-sm font-semibold text-slate-200">

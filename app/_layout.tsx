@@ -10,6 +10,10 @@ export default function RootLayout() {
         name="driver-profile"
         options={{ title: "Driver Profile" }}
       />
+      <Stack.Screen
+        name="driver-verification"
+        options={{ title: "Driver Verification" }}
+      />
       <Stack.Screen name="login" options={{ title: "Login" }} />
       <Stack.Screen name="signup/rider" options={{ title: "Rider Signup" }} />
       <Stack.Screen name="signup/driver" options={{ title: "Driver Signup" }} />

@@ -1,3 +1,5 @@
+import { loadSession } from "./auth";
+import { API_BASE_URL } from "./config";
 import { HttpError, http } from "./http";
 
 export type VerificationStatus =
@@ -18,6 +20,25 @@ export interface DriverPreferences {
 export interface DriverUpdateRequest {
   preferences?: DriverPreferences;
   bio?: string;
+}
+
+export interface UploadDocumentFile {
+  uri: string;
+  name: string;
+  type?: string | null;
+}
+
+export interface DriverVerificationUploadRequest {
+  cnic_number: string;
+  cnic_front: UploadDocumentFile;
+  cnic_back: UploadDocumentFile;
+  license_number?: string;
+  license_doc?: UploadDocumentFile;
+}
+
+export interface VerificationSubmitResponse {
+  message: string;
+  verification_status: string;
 }
 
 export interface DriverProfile {
@@ -155,4 +176,74 @@ export async function updateMyDriverProfile(payload: DriverUpdateRequest) {
   } catch {
     return normalized;
   }
+}
+
+function appendUploadFile(
+  formData: FormData,
+  fieldName: string,
+  file: UploadDocumentFile,
+) {
+  formData.append(fieldName, {
+    uri: file.uri,
+    name: file.name,
+    type: file.type || "image/jpeg",
+  } as unknown as Blob);
+}
+
+async function parseUploadResponseBody(response: Response) {
+  const contentType = response.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) {
+    return response.json();
+  }
+
+  const text = await response.text();
+  return text.length > 0 ? text : null;
+}
+
+export async function uploadDriverVerificationDocuments(
+  payload: DriverVerificationUploadRequest,
+) {
+  const session = await loadSession();
+  if (!session?.access_token) {
+    throw new HttpError("Authentication required", { status: 401 });
+  }
+
+  const formData = new FormData();
+  formData.append("cnic_number", payload.cnic_number);
+  appendUploadFile(formData, "cnic_front", payload.cnic_front);
+  appendUploadFile(formData, "cnic_back", payload.cnic_back);
+
+  if (payload.license_number?.trim()) {
+    formData.append("license_number", payload.license_number.trim());
+  }
+  if (payload.license_doc) {
+    appendUploadFile(formData, "license_doc", payload.license_doc);
+  }
+
+  const response = await fetch(
+    `${API_BASE_URL}/drivers/verification/documents`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: formData,
+    },
+  );
+
+  const data = await parseUploadResponseBody(response);
+
+  if (!response.ok) {
+    const detail =
+      typeof data === "object" &&
+      data &&
+      "detail" in data &&
+      typeof (data as { detail?: unknown }).detail === "string"
+        ? (data as { detail: string }).detail
+        : `Request failed with status ${response.status}`;
+
+    throw new HttpError(detail, { status: response.status, data });
+  }
+
+  return data as VerificationSubmitResponse;
 }
