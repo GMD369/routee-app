@@ -17,6 +17,10 @@ export default function RootLayout() {
       <Stack.Screen name="login" options={{ title: "Login" }} />
       <Stack.Screen name="signup/rider" options={{ title: "Rider Signup" }} />
       <Stack.Screen name="signup/driver" options={{ title: "Driver Signup" }} />
+      <Stack.Screen
+        name="map-picker"
+        options={{ headerShown: false, presentation: "modal" }}
+      />
     </Stack>
   );
 }

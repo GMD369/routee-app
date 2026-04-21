@@ -47,8 +47,8 @@ export default function AccountTabScreen() {
 
   if (!sessionChecked) {
     return (
-      <View className="flex-1 items-center justify-center bg-slate-950">
-        <Text className="text-sm text-slate-300">Loading account...</Text>
+      <View className="flex-1 items-center justify-center bg-white">
+        <Text className="text-sm text-slate-500">Loading account...</Text>
       </View>
     );
   }
@@ -56,29 +56,29 @@ export default function AccountTabScreen() {
   if (!isLoggedIn) {
     return (
       <ScrollView
-        className="flex-1 bg-slate-950"
+        className="flex-1 bg-white"
         contentContainerClassName="px-6 pb-28 pt-16"
       >
-        <Text className="text-3xl font-black text-white">Account</Text>
-        <Text className="mt-2 text-sm text-slate-300">
+        <Text className="text-3xl font-black text-slate-900">Account</Text>
+        <Text className="mt-2 text-sm text-slate-500">
           Login to access your rider profile and saved locations.
         </Text>
 
         <View className="mt-7 gap-4">
           <Pressable
             onPress={() => router.push("/login")}
-            className="rounded-2xl border border-slate-600 bg-slate-900 px-5 py-4"
+            className="rounded-2xl border border-stone-200 bg-stone-50 px-5 py-4"
           >
-            <Text className="text-center text-lg font-semibold text-slate-100">
+            <Text className="text-center text-lg font-semibold text-slate-700">
               Login
             </Text>
           </Pressable>
 
           <Pressable
             onPress={() => router.push("/signup")}
-            className="rounded-2xl border border-white bg-white px-5 py-4"
+            className="rounded-2xl border border-slate-900 bg-slate-900 px-5 py-4"
           >
-            <Text className="text-center text-lg font-semibold text-slate-950">
+            <Text className="text-center text-lg font-semibold text-white">
               Start Signup
             </Text>
           </Pressable>
@@ -89,11 +89,11 @@ export default function AccountTabScreen() {
 
   return (
     <ScrollView
-      className="flex-1 bg-slate-950"
+      className="flex-1 bg-white"
       contentContainerClassName="px-6 pb-28 pt-16"
     >
-      <Text className="text-3xl font-black text-white">Account</Text>
-      <Text className="mt-2 text-sm text-slate-300">
+      <Text className="text-3xl font-black text-slate-900">Account</Text>
+      <Text className="mt-2 text-sm text-slate-500">
         Open your {role === "driver" ? "driver" : "rider"} profile or sign out
         of the app.
       </Text>
@@ -101,27 +101,27 @@ export default function AccountTabScreen() {
       <View className="mt-7 gap-4">
         <Link
           href={profileRoute}
-          className="rounded-2xl border border-slate-700 bg-slate-900 px-5 py-4"
+          className="rounded-2xl border border-stone-200 bg-stone-50 px-5 py-4"
         >
-          <Text className="text-center text-lg font-semibold text-cyan-300">
+          <Text className="text-center text-lg font-semibold text-sky-600">
             {profileTitle}
           </Text>
         </Link>
 
         <Pressable
           onPress={() => router.push("/")}
-          className="rounded-2xl border border-slate-700 bg-slate-900 px-5 py-4"
+          className="rounded-2xl border border-stone-200 bg-stone-50 px-5 py-4"
         >
-          <Text className="text-center text-lg font-semibold text-slate-100">
+          <Text className="text-center text-lg font-semibold text-slate-700">
             Go to Home
           </Text>
         </Pressable>
 
         <Pressable
           onPress={() => void onLogout()}
-          className="rounded-2xl border border-rose-400/50 bg-rose-900/20 px-5 py-4"
+          className="rounded-2xl border border-rose-300 bg-rose-50 px-5 py-4"
         >
-          <Text className="text-center text-lg font-semibold text-rose-200">
+          <Text className="text-center text-lg font-semibold text-rose-600">
             Logout
           </Text>
         </Pressable>

@@ -103,23 +103,23 @@ export default function SignupScreen() {
 
   return (
     <ScrollView
-      className="flex-1 bg-slate-950"
+      className="flex-1 bg-white"
       contentContainerClassName="px-6 pb-16 pt-12"
     >
-      <Text className="text-3xl font-black text-white">Create Account</Text>
-      <Text className="mt-2 text-sm text-slate-300">{subtitle}</Text>
+      <Text className="text-3xl font-black text-slate-900">Create Account</Text>
+      <Text className="mt-2 text-sm text-slate-500">{subtitle}</Text>
 
-      <View className="mt-7 rounded-2xl border border-slate-800 bg-slate-900 p-2">
+      <View className="mt-7 rounded-2xl border border-stone-200 bg-stone-100 p-2">
         <View className="flex-row gap-2">
           <Pressable
             onPress={() => setRole("rider")}
             className={`flex-1 rounded-xl px-4 py-3 ${
-              role === "rider" ? "bg-cyan-400" : "bg-slate-800"
+              role === "rider" ? "bg-slate-900" : "bg-stone-200"
             }`}
           >
             <Text
               className={`text-center text-sm font-bold ${
-                role === "rider" ? "text-slate-950" : "text-slate-300"
+                role === "rider" ? "text-white" : "text-slate-600"
               }`}
             >
               Rider
@@ -129,12 +129,12 @@ export default function SignupScreen() {
           <Pressable
             onPress={() => setRole("driver")}
             className={`flex-1 rounded-xl px-4 py-3 ${
-              role === "driver" ? "bg-cyan-400" : "bg-slate-800"
+              role === "driver" ? "bg-slate-900" : "bg-stone-200"
             }`}
           >
             <Text
               className={`text-center text-sm font-bold ${
-                role === "driver" ? "text-slate-950" : "text-slate-300"
+                role === "driver" ? "text-white" : "text-slate-600"
               }`}
             >
               Driver
@@ -182,12 +182,12 @@ export default function SignupScreen() {
       <Pressable
         onPress={onSubmit}
         disabled={loading}
-        className="mt-8 items-center rounded-2xl border border-white bg-white px-5 py-4"
+        className="mt-8 items-center rounded-2xl border border-slate-900 bg-slate-900 px-5 py-4"
       >
         {loading ? (
-          <ActivityIndicator color="#0f172a" />
+          <ActivityIndicator color="#ffffff" />
         ) : (
-          <Text className="text-lg font-semibold text-slate-950">
+          <Text className="text-lg font-semibold text-white">
             Sign up as {role === "rider" ? "Rider" : "Driver"}
           </Text>
         )}
@@ -195,9 +195,9 @@ export default function SignupScreen() {
 
       <Pressable
         onPress={() => router.push("/login")}
-        className="mt-4 items-center rounded-2xl border border-slate-700 bg-slate-900 px-5 py-4"
+        className="mt-4 items-center rounded-2xl border border-stone-200 bg-stone-50 px-5 py-4"
       >
-        <Text className="text-base font-semibold text-slate-100">
+        <Text className="text-base font-semibold text-slate-700">
           Already have an account? Login
         </Text>
       </Pressable>
@@ -226,7 +226,7 @@ function Field({
 }: FieldProps) {
   return (
     <View>
-      <Text className="mb-2 text-sm font-medium text-slate-200">{label}</Text>
+      <Text className="mb-2 text-sm font-medium text-slate-700">{label}</Text>
       <TextInput
         value={value}
         onChangeText={onChangeText}
@@ -234,8 +234,8 @@ function Field({
         autoCapitalize={autoCapitalize}
         secureTextEntry={secureTextEntry}
         placeholder={placeholder}
-        placeholderTextColor="#64748b"
-        className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-base text-white"
+        placeholderTextColor="#94a3b8"
+        className="rounded-xl border border-stone-300 bg-stone-50 px-4 py-3 text-base text-slate-900"
       />
     </View>
   );
@@ -268,21 +268,21 @@ function GenderField({ label, value, onChange }: GenderFieldProps) {
 
   return (
     <View>
-      <Text className="mb-2 text-sm font-medium text-slate-200">{label}</Text>
+      <Text className="mb-2 text-sm font-medium text-slate-700">{label}</Text>
 
       <Pressable
         onPress={() => setIsOpen((current) => !current)}
-        className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3"
+        className="rounded-xl border border-stone-300 bg-stone-50 px-4 py-3"
       >
         <Text
-          className={`text-base ${selectedGender ? "text-white" : "text-slate-400"}`}
+          className={`text-base ${selectedGender ? "text-slate-900" : "text-slate-400"}`}
         >
           {selectedGender ? formatGenderLabel(selectedGender) : "Select gender"}
         </Text>
       </Pressable>
 
       {isOpen ? (
-        <View className="mt-2 overflow-hidden rounded-xl border border-slate-700 bg-slate-900">
+        <View className="mt-2 overflow-hidden rounded-xl border border-stone-300 bg-stone-50">
           {GENDER_OPTIONS.map((option) => {
             const isSelected = selectedGender === option;
 
@@ -290,11 +290,11 @@ function GenderField({ label, value, onChange }: GenderFieldProps) {
               <Pressable
                 key={option}
                 onPress={() => onSelect(option)}
-                className={`px-4 py-3 ${isSelected ? "bg-cyan-400" : "bg-slate-900"}`}
+                className={`px-4 py-3 ${isSelected ? "bg-slate-900" : "bg-stone-50"}`}
               >
                 <Text
                   className={`text-base font-medium ${
-                    isSelected ? "text-slate-950" : "text-slate-200"
+                    isSelected ? "text-white" : "text-slate-700"
                   }`}
                 >
                   {formatGenderLabel(option)}
@@ -329,23 +329,23 @@ function DateOfBirthField({ value, onChange }: DateOfBirthFieldProps) {
 
   return (
     <View>
-      <Text className="mb-2 text-sm font-medium text-slate-200">
+      <Text className="mb-2 text-sm font-medium text-slate-700">
         Date of Birth
       </Text>
 
       <Pressable
         onPress={() => setPickerVisible(true)}
-        className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3"
+        className="rounded-xl border border-stone-300 bg-stone-50 px-4 py-3"
       >
         <Text
-          className={`text-base ${value ? "text-white" : "text-slate-400"}`}
+          className={`text-base ${value ? "text-slate-900" : "text-slate-400"}`}
         >
           {value || "Select date"}
         </Text>
       </Pressable>
 
       {isPickerVisible ? (
-        <View className="mt-2 rounded-xl border border-slate-700 bg-slate-900 px-2 py-2">
+        <View className="mt-2 rounded-xl border border-stone-300 bg-stone-50 px-2 py-2">
           <DateTimePicker
             value={pickerValue}
             mode="date"
@@ -357,9 +357,9 @@ function DateOfBirthField({ value, onChange }: DateOfBirthFieldProps) {
           {Platform.OS === "ios" ? (
             <Pressable
               onPress={() => setPickerVisible(false)}
-              className="mt-2 items-center rounded-lg bg-slate-800 py-2"
+              className="mt-2 items-center rounded-lg bg-stone-200 py-2"
             >
-              <Text className="font-semibold text-cyan-300">Done</Text>
+              <Text className="font-semibold text-sky-600">Done</Text>
             </Pressable>
           ) : null}
         </View>

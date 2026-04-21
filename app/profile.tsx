@@ -1,5 +1,7 @@
+import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
@@ -7,10 +9,12 @@ import {
     ScrollView,
     Switch,
     Text,
-    TextInput,
     View,
 } from "react-native";
 import { clearSession, getApiErrorMessage, loadSession } from "../lib/auth";
+import {
+    consumePendingLocationResult,
+} from "../lib/locationPickerStore";
 import {
     deleteSavedLocation,
     getMyRiderProfile,
@@ -25,12 +29,8 @@ export default function RiderProfileScreen() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
   const [savingPrefs, setSavingPrefs] = useState(false);
-  const [savingLocation, setSavingLocation] = useState<"home" | "work" | null>(
-    null,
-  );
-  const [deletingLocation, setDeletingLocation] = useState<
-    "home" | "work" | null
-  >(null);
+  const [savingLocation, setSavingLocation] = useState<"home" | "work" | null>(null);
+  const [deletingLocation, setDeletingLocation] = useState<"home" | "work" | null>(null);
 
   const [profile, setProfile] = useState<RiderProfile | null>(null);
 
@@ -63,6 +63,25 @@ export default function RiderProfileScreen() {
     void initialize();
   }, []);
 
+  // When navigating back from map-picker, consume the pending result and
+  // populate the correct location fields without saving yet.
+  useFocusEffect(
+    useCallback(() => {
+      const result = consumePendingLocationResult();
+      if (!result) return;
+
+      if (result.type === "home") {
+        setHomeAddress(result.address);
+        setHomeLat(String(result.latitude));
+        setHomeLng(String(result.longitude));
+      } else {
+        setWorkAddress(result.address);
+        setWorkLat(String(result.latitude));
+        setWorkLng(String(result.longitude));
+      }
+    }, []),
+  );
+
   async function initialize() {
     setLoading(true);
     try {
@@ -89,10 +108,10 @@ export default function RiderProfileScreen() {
     setPreferences(riderProfile.preferences);
 
     const home = riderProfile.saved_locations.find(
-      (location) => location.name.toLowerCase() === "home",
+      (l) => l.name.toLowerCase() === "home",
     );
     const work = riderProfile.saved_locations.find(
-      (location) => location.name.toLowerCase() === "work",
+      (l) => l.name.toLowerCase() === "work",
     );
 
     setHomeAddress(home?.address || "");
@@ -131,25 +150,17 @@ export default function RiderProfileScreen() {
     }
 
     const isHome = kind === "home";
-    const address = isHome ? homeAddress.trim() : workAddress.trim();
-    const latValue = isHome ? homeLat.trim() : workLat.trim();
-    const lngValue = isHome ? homeLng.trim() : workLng.trim();
+    const address = isHome ? homeAddress : workAddress;
+    const latValue = isHome ? homeLat : workLat;
+    const lngValue = isHome ? homeLng : workLng;
 
     const latitude = Number(latValue);
     const longitude = Number(lngValue);
 
-    if (Number.isNaN(latitude) || latitude < -90 || latitude > 90) {
+    if (!latValue || !lngValue || Number.isNaN(latitude) || Number.isNaN(longitude)) {
       Alert.alert(
-        "Invalid latitude",
-        `${isHome ? "Home" : "Work"} latitude must be between -90 and 90.`,
-      );
-      return;
-    }
-
-    if (Number.isNaN(longitude) || longitude < -180 || longitude > 180) {
-      Alert.alert(
-        "Invalid longitude",
-        `${isHome ? "Home" : "Work"} longitude must be between -180 and 180.`,
+        "No location",
+        `Set your ${isHome ? "home" : "work"} location on the map first.`,
       );
       return;
     }
@@ -186,7 +197,7 @@ export default function RiderProfileScreen() {
     }
 
     const target = profile.saved_locations.find(
-      (location) => location.name.trim().toLowerCase() === kind,
+      (l) => l.name.trim().toLowerCase() === kind,
     );
 
     if (!target) {
@@ -211,9 +222,9 @@ export default function RiderProfileScreen() {
 
   if (!sessionChecked || loading) {
     return (
-      <View className="flex-1 items-center justify-center bg-slate-950">
-        <ActivityIndicator color="#22d3ee" />
-        <Text className="mt-3 text-sm text-slate-300">Loading profile...</Text>
+      <View className="flex-1 items-center justify-center bg-white">
+        <ActivityIndicator color="#0284c7" />
+        <Text className="mt-3 text-sm text-slate-500">Loading profile...</Text>
       </View>
     );
   }
@@ -221,29 +232,29 @@ export default function RiderProfileScreen() {
   if (!isLoggedIn) {
     return (
       <ScrollView
-        className="flex-1 bg-slate-950"
+        className="flex-1 bg-white"
         contentContainerClassName="px-6 pb-28 pt-16"
       >
-        <Text className="text-3xl font-black text-white">Profile</Text>
-        <Text className="mt-2 text-sm text-slate-300">
+        <Text className="text-3xl font-black text-slate-900">Profile</Text>
+        <Text className="mt-2 text-sm text-slate-500">
           Login to view and update your rider profile.
         </Text>
 
         <View className="mt-7 gap-4">
           <Pressable
             onPress={() => router.push("/login")}
-            className="rounded-2xl border border-slate-600 bg-slate-900 px-5 py-4"
+            className="rounded-2xl border border-stone-200 bg-stone-50 px-5 py-4"
           >
-            <Text className="text-center text-lg font-semibold text-slate-100">
+            <Text className="text-center text-lg font-semibold text-slate-700">
               Login
             </Text>
           </Pressable>
 
           <Pressable
             onPress={() => router.push("/signup")}
-            className="rounded-2xl border border-white bg-white px-5 py-4"
+            className="rounded-2xl border border-slate-900 bg-slate-900 px-5 py-4"
           >
-            <Text className="text-center text-lg font-semibold text-slate-950">
+            <Text className="text-center text-lg font-semibold text-white">
               Start Signup
             </Text>
           </Pressable>
@@ -254,19 +265,17 @@ export default function RiderProfileScreen() {
 
   return (
     <ScrollView
-      className="flex-1 bg-slate-950"
+      className="flex-1 bg-white"
       contentContainerClassName="px-6 pb-28 pt-16"
     >
-      <Text className="text-3xl font-black text-white">Profile</Text>
-      <Text className="mt-2 text-sm text-slate-300">
+      <Text className="text-3xl font-black text-slate-900">Profile</Text>
+      <Text className="mt-2 text-sm text-slate-500">
         Rider profile, preferences, and saved places.
       </Text>
 
       {stats ? (
-        <View className="mt-6 rounded-2xl border border-slate-800 bg-slate-900 p-4">
-          <Text className="text-sm font-semibold text-slate-200">
-            Ride Stats
-          </Text>
+        <View className="mt-6 rounded-2xl border border-stone-200 bg-stone-50 p-4">
+          <Text className="text-sm font-semibold text-slate-700">Ride Stats</Text>
           <View className="mt-3 flex-row justify-between">
             <Stat label="Rating" value={stats.rating} />
             <Stat label="Ratings" value={String(stats.count)} />
@@ -275,82 +284,74 @@ export default function RiderProfileScreen() {
         </View>
       ) : null}
 
-      <View className="mt-7 rounded-2xl border border-slate-800 bg-slate-900 p-4">
-        <Text className="text-sm font-semibold text-slate-100">
-          Preferences
-        </Text>
+      <View className="mt-7 rounded-2xl border border-stone-200 bg-stone-50 p-4">
+        <Text className="text-sm font-semibold text-slate-800">Preferences</Text>
         <View className="mt-4 gap-3">
           <PreferenceRow
             label="University Student"
             value={preferences.uni_student}
-            onValueChange={(value) => setPreferenceFlag("uni_student", value)}
+            onValueChange={(v) => setPreferenceFlag("uni_student", v)}
           />
           <PreferenceRow
             label="Corporate Employee"
             value={preferences.corporate_employee}
-            onValueChange={(value) =>
-              setPreferenceFlag("corporate_employee", value)
-            }
+            onValueChange={(v) => setPreferenceFlag("corporate_employee", v)}
           />
           <PreferenceRow
             label="Female-only Matching"
             value={preferences.female_only}
-            onValueChange={(value) => setPreferenceFlag("female_only", value)}
+            onValueChange={(v) => setPreferenceFlag("female_only", v)}
           />
           <PreferenceRow
             label="Music Allowed"
             value={preferences.music_ok}
-            onValueChange={(value) => setPreferenceFlag("music_ok", value)}
+            onValueChange={(v) => setPreferenceFlag("music_ok", v)}
           />
           <PreferenceRow
             label="Quiet Ride"
             value={preferences.quiet_ride}
-            onValueChange={(value) => setPreferenceFlag("quiet_ride", value)}
+            onValueChange={(v) => setPreferenceFlag("quiet_ride", v)}
           />
         </View>
 
         <Pressable
           onPress={onSavePreferences}
           disabled={savingPrefs}
-          className="mt-4 items-center rounded-xl bg-cyan-400 px-4 py-3"
+          className="mt-4 items-center rounded-xl bg-sky-500 px-4 py-3"
         >
           {savingPrefs ? (
-            <ActivityIndicator color="#0f172a" />
+            <ActivityIndicator color="#ffffff" />
           ) : (
-            <Text className="text-base font-semibold text-slate-950">
+            <Text className="text-base font-semibold text-white">
               Save Preferences
             </Text>
           )}
         </Pressable>
       </View>
 
-      <LocationEditor
+      <LocationCard
         title="Home Location"
+        type="home"
         address={homeAddress}
         latitude={homeLat}
         longitude={homeLng}
-        onAddressChange={setHomeAddress}
-        onLatitudeChange={setHomeLat}
-        onLongitudeChange={setHomeLng}
         saveText="Save Home"
         onSave={() => void onSaveLocation("home")}
-        loading={savingLocation === "home"}
+        saving={savingLocation === "home"}
         deleting={deletingLocation === "home"}
         onDelete={() => void onDeleteLocation("home")}
         deleteText="Delete Home"
       />
 
-      <LocationEditor
+      <LocationCard
         title="Work Location"
+        type="work"
         address={workAddress}
         latitude={workLat}
         longitude={workLng}
-        onAddressChange={setWorkAddress}
-        onLatitudeChange={setWorkLat}
-        onLongitudeChange={setWorkLng}
         saveText="Save Work"
         onSave={() => void onSaveLocation("work")}
-        loading={savingLocation === "work"}
+        saving={savingLocation === "work"}
         deleting={deletingLocation === "work"}
         onDelete={() => void onDeleteLocation("work")}
         deleteText="Delete Work"
@@ -358,24 +359,23 @@ export default function RiderProfileScreen() {
 
       <Pressable
         onPress={() => void onLogout()}
-        className="mt-8 items-center rounded-2xl border border-rose-400/50 bg-rose-900/20 px-5 py-4"
+        className="mt-8 items-center rounded-2xl border border-rose-300 bg-rose-50 px-5 py-4"
       >
-        <Text className="text-base font-semibold text-rose-200">Logout</Text>
+        <Text className="text-base font-semibold text-rose-600">Logout</Text>
       </Pressable>
     </ScrollView>
   );
 }
 
-type StatProps = {
-  label: string;
-  value: string;
-};
+// ─── Sub-components ──────────────────────────────────────────────────────────
+
+type StatProps = { label: string; value: string };
 
 function Stat({ label, value }: StatProps) {
   return (
     <View className="items-start">
-      <Text className="text-xl font-black text-white">{value}</Text>
-      <Text className="mt-1 text-xs text-slate-400">{label}</Text>
+      <Text className="text-xl font-black text-slate-900">{value}</Text>
+      <Text className="mt-1 text-xs text-slate-500">{label}</Text>
     </View>
   );
 }
@@ -388,8 +388,8 @@ type PreferenceRowProps = {
 
 function PreferenceRow({ label, value, onValueChange }: PreferenceRowProps) {
   return (
-    <View className="flex-row items-center justify-between rounded-xl border border-slate-800 bg-slate-950 px-3 py-3">
-      <Text className="mr-3 flex-1 text-sm font-medium text-slate-200">
+    <View className="flex-row items-center justify-between rounded-xl border border-stone-200 bg-white px-3 py-3">
+      <Text className="mr-3 flex-1 text-sm font-medium text-slate-700">
         {label}
       </Text>
       <Switch value={value} onValueChange={onValueChange} />
@@ -397,122 +397,110 @@ function PreferenceRow({ label, value, onValueChange }: PreferenceRowProps) {
   );
 }
 
-type LocationEditorProps = {
+type LocationCardProps = {
   title: string;
+  type: "home" | "work";
   address: string;
   latitude: string;
   longitude: string;
-  onAddressChange: (value: string) => void;
-  onLatitudeChange: (value: string) => void;
-  onLongitudeChange: (value: string) => void;
   saveText: string;
   onSave: () => void;
-  loading: boolean;
+  saving: boolean;
   deleting: boolean;
   onDelete: () => void;
   deleteText: string;
 };
 
-function LocationEditor({
+function LocationCard({
   title,
+  type,
   address,
   latitude,
   longitude,
-  onAddressChange,
-  onLatitudeChange,
-  onLongitudeChange,
   saveText,
   onSave,
-  loading,
+  saving,
   deleting,
   onDelete,
   deleteText,
-}: LocationEditorProps) {
-  return (
-    <View className="mt-7 rounded-2xl border border-slate-800 bg-slate-900 p-4">
-      <Text className="text-sm font-semibold text-slate-100">{title}</Text>
+}: LocationCardProps) {
+  const hasLocation = latitude !== "" && longitude !== "";
 
-      <View className="mt-4 gap-3">
-        <Field
-          label="Address"
-          value={address}
-          onChangeText={onAddressChange}
-          placeholder="Optional"
-        />
-        <Field
-          label="Latitude"
-          value={latitude}
-          onChangeText={onLatitudeChange}
-          keyboardType="default"
-          placeholder="e.g. 24.8607"
-        />
-        <Field
-          label="Longitude"
-          value={longitude}
-          onChangeText={onLongitudeChange}
-          keyboardType="default"
-          placeholder="e.g. 67.0011"
-        />
+  function openMapPicker() {
+    router.push({
+      pathname: "/map-picker",
+      params: {
+        type,
+        initialLat: latitude || "",
+        initialLng: longitude || "",
+        initialAddress: address || "",
+      },
+    });
+  }
+
+  return (
+    <View className="mt-7 rounded-2xl border border-stone-200 bg-stone-50 p-4">
+      <Text className="text-sm font-semibold text-slate-800">{title}</Text>
+
+      {/* Current location preview */}
+      <View className="mt-3 rounded-xl border border-stone-200 bg-white p-3">
+        {hasLocation ? (
+          <>
+            <Text className="text-sm leading-5 text-slate-700" numberOfLines={2}>
+              {address || "Address not available"}
+            </Text>
+            <Text className="mt-1 text-xs text-slate-400">
+              {Number(latitude).toFixed(5)}, {Number(longitude).toFixed(5)}
+            </Text>
+          </>
+        ) : (
+          <Text className="text-sm text-slate-400">No location set yet</Text>
+        )}
       </View>
 
+      {/* Open map button */}
       <Pressable
-        onPress={onSave}
-        disabled={loading || deleting}
-        className="mt-4 items-center rounded-xl border border-white bg-white px-4 py-3"
+        onPress={openMapPicker}
+        className="mt-3 flex-row items-center justify-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3"
       >
-        {loading ? (
-          <ActivityIndicator color="#0f172a" />
-        ) : (
-          <Text className="text-base font-semibold text-slate-950">
-            {saveText}
-          </Text>
-        )}
+        <Ionicons name="map-outline" size={18} color="#0284c7" />
+        <Text className="text-sm font-semibold text-sky-600">
+          {hasLocation ? "Change on Map" : "Set on Map"}
+        </Text>
       </Pressable>
 
-      <Pressable
-        onPress={onDelete}
-        disabled={loading || deleting}
-        className="mt-3 items-center rounded-xl border border-rose-400/50 bg-rose-900/20 px-4 py-3"
-      >
-        {deleting ? (
-          <ActivityIndicator color="#fecaca" />
-        ) : (
-          <Text className="text-base font-semibold text-rose-200">
-            {deleteText}
-          </Text>
-        )}
-      </Pressable>
-    </View>
-  );
-}
+      {/* Save and delete — only shown once a location is picked */}
+      {hasLocation ? (
+        <>
+          <Pressable
+            onPress={onSave}
+            disabled={saving || deleting}
+            className="mt-3 items-center rounded-xl border border-slate-900 bg-slate-900 px-4 py-3"
+          >
+            {saving ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <Text className="text-base font-semibold text-white">
+                {saveText}
+              </Text>
+            )}
+          </Pressable>
 
-type FieldProps = {
-  label: string;
-  value: string;
-  onChangeText: (text: string) => void;
-  keyboardType?: "default" | "email-address" | "phone-pad";
-  placeholder?: string;
-};
-
-function Field({
-  label,
-  value,
-  onChangeText,
-  keyboardType = "default",
-  placeholder,
-}: FieldProps) {
-  return (
-    <View>
-      <Text className="mb-2 text-sm font-medium text-slate-200">{label}</Text>
-      <TextInput
-        value={value}
-        onChangeText={onChangeText}
-        keyboardType={keyboardType}
-        autoCapitalize="none"
-        placeholder={placeholder}
-        placeholderTextColor="#64748b"
-        className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-base text-white"
-      />
+          <Pressable
+            onPress={onDelete}
+            disabled={saving || deleting}
+            className="mt-3 items-center rounded-xl border border-rose-300 bg-rose-50 px-4 py-3"
+          >
+            {deleting ? (
+              <ActivityIndicator color="#e11d48" />
+            ) : (
+              <Text className="text-base font-semibold text-rose-600">
+                {deleteText}
+              </Text>
+            )}
+          </Pressable>
+        </>
+      ) : null}
     </View>
   );
 }

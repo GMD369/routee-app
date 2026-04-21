@@ -7,15 +7,15 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: "#22d3ee",
+        tabBarActiveTintColor: "#0284c7",
         tabBarInactiveTintColor: "#94a3b8",
         tabBarStyle: {
           position: "absolute",
           left: 16,
           right: 16,
           bottom: 18,
-          backgroundColor: "#0f172a",
-          borderColor: "#1e293b",
+          backgroundColor: "#ffffff",
+          borderColor: "#e2e8f0",
           borderWidth: 1,
           borderRadius: 24,
           height: 72,
@@ -33,7 +33,7 @@ export default function TabsLayout() {
           return (
             <View
               style={{
-                backgroundColor: focused ? "#083344" : "transparent",
+                backgroundColor: focused ? "#e0f2fe" : "transparent",
                 borderRadius: 16,
                 paddingHorizontal: 12,
                 paddingVertical: 6,

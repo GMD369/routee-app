@@ -47,11 +47,11 @@ export default function LoginScreen() {
 
   return (
     <ScrollView
-      className="flex-1 bg-slate-950"
+      className="flex-1 bg-white"
       contentContainerClassName="px-6 pb-16 pt-12"
     >
-      <Text className="text-3xl font-black text-white">Login</Text>
-      <Text className="mt-2 text-sm text-slate-300">
+      <Text className="text-3xl font-black text-slate-900">Login</Text>
+      <Text className="mt-2 text-sm text-slate-500">
         Sign in with your Routee account.
       </Text>
 
@@ -77,18 +77,18 @@ export default function LoginScreen() {
       <Pressable
         onPress={onSubmit}
         disabled={loading}
-        className="mt-8 items-center rounded-2xl border border-white bg-white px-5 py-4"
+        className="mt-8 items-center rounded-2xl border border-slate-900 bg-slate-900 px-5 py-4"
       >
         {loading ? (
-          <ActivityIndicator color="#0f172a" />
+          <ActivityIndicator color="#ffffff" />
         ) : (
-          <Text className="text-lg font-semibold text-slate-950">Login</Text>
+          <Text className="text-lg font-semibold text-white">Login</Text>
         )}
       </Pressable>
 
       <Link
         href="/signup"
-        className="mt-4 rounded-2xl border border-slate-700 bg-slate-900 px-5 py-4 text-center text-base font-semibold text-slate-100"
+        className="mt-4 rounded-2xl border border-stone-200 bg-stone-50 px-5 py-4 text-center text-base font-semibold text-slate-700"
       >
         Create a new account
       </Link>
@@ -117,7 +117,7 @@ function Field({
 }: FieldProps) {
   return (
     <View>
-      <Text className="mb-2 text-sm font-medium text-slate-200">{label}</Text>
+      <Text className="mb-2 text-sm font-medium text-slate-700">{label}</Text>
       <TextInput
         value={value}
         onChangeText={onChangeText}
@@ -125,8 +125,8 @@ function Field({
         autoCapitalize={autoCapitalize}
         secureTextEntry={secureTextEntry}
         placeholder={placeholder}
-        placeholderTextColor="#64748b"
-        className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-base text-white"
+        placeholderTextColor="#94a3b8"
+        className="rounded-xl border border-stone-300 bg-stone-50 px-4 py-3 text-base text-slate-900"
       />
     </View>
   );
