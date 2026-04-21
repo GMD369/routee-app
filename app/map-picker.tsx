@@ -2,15 +2,15 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  FlatList,
-  Keyboard,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    ActivityIndicator,
+    FlatList,
+    Keyboard,
+    Platform,
+    Pressable,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from "react-native";
 import WebView, { WebViewMessageEvent } from "react-native-webview";
 import { setPendingLocationResult } from "../lib/locationPickerStore";
@@ -157,20 +157,26 @@ function buildMapHtml(
 // Screen component
 // ---------------------------------------------------------------------------
 export default function MapPickerScreen() {
-  const { type, initialLat, initialLng, initialAddress } =
+  const { type, initialLat, initialLng, initialAddress, locationName } =
     useLocalSearchParams<{
       type: string;
       initialLat?: string;
       initialLng?: string;
       initialAddress?: string;
+      locationName?: string;
     }>();
 
   const hasCustomLocation = Boolean(initialLat && initialLng);
   const initLat = hasCustomLocation ? Number(initialLat) : FALLBACK_LAT;
   const initLng = hasCustomLocation ? Number(initialLng) : FALLBACK_LNG;
 
-  const locationType = (type as "home" | "work") ?? "home";
-  const label = locationType === "home" ? "Home" : "Work";
+  const locationType = type ?? "home";
+  const label =
+    locationType === "home"
+      ? "Home"
+      : locationType === "work"
+        ? "Work"
+        : locationName || "Location";
 
   const [coords, setCoords] = useState({ lat: initLat, lng: initLng });
   const [address, setAddress] = useState(initialAddress ?? "");
@@ -284,6 +290,7 @@ export default function MapPickerScreen() {
   function onConfirm() {
     setPendingLocationResult({
       type: locationType,
+      name: locationName,
       address,
       latitude: coords.lat,
       longitude: coords.lng,
@@ -342,7 +349,11 @@ export default function MapPickerScreen() {
             clearButtonMode="while-editing"
           />
           {searching && (
-            <ActivityIndicator size="small" color="#0284c7" style={{ marginLeft: 6 }} />
+            <ActivityIndicator
+              size="small"
+              color="#0284c7"
+              style={{ marginLeft: 6 }}
+            />
           )}
         </View>
       </View>

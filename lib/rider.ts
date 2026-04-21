@@ -42,7 +42,6 @@ const PROFILE_ENDPOINTS = ["/riders/me"] as const;
 const LOCATION_CREATE_ENDPOINTS = ["/riders/me/locations"] as const;
 const LOCATION_UPDATE_BASE_ENDPOINTS = ["/riders/me/locations"] as const;
 const LOCATION_DELETE_BASE_ENDPOINTS = ["/riders/me/locations"] as const;
-const LOCATION_LIST_ENDPOINTS = ["/riders/me/locations"] as const;
 
 const DEFAULT_PREFERENCES: RiderPreferences = {
   uni_student: false,
@@ -179,26 +178,12 @@ async function tryDelete(paths: readonly string[]): Promise<void> {
 }
 
 export async function getMyRiderProfile() {
-  const profile = normalizeProfile(
-    await tryGet<RiderProfile>(PROFILE_ENDPOINTS),
-  );
-
-  try {
-    const savedLocations = await tryGet<SavedLocation[]>(
-      LOCATION_LIST_ENDPOINTS,
-    );
-    return {
-      ...profile,
-      saved_locations: Array.isArray(savedLocations) ? savedLocations : [],
-    };
-  } catch {
-    return profile;
-  }
+  return normalizeProfile(await tryGet<RiderProfile>(PROFILE_ENDPOINTS));
 }
 
 export async function getMySavedLocations() {
-  const savedLocations = await tryGet<SavedLocation[]>(LOCATION_LIST_ENDPOINTS);
-  return Array.isArray(savedLocations) ? savedLocations : [];
+  const profile = await getMyRiderProfile();
+  return Array.isArray(profile.saved_locations) ? profile.saved_locations : [];
 }
 
 export async function updateRiderPreferences(preferences: RiderPreferences) {

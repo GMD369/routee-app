@@ -1,5 +1,6 @@
 export type LocationPickerResult = {
-  type: "home" | "work";
+  type: string;
+  name?: string;
   address: string;
   latitude: number;
   longitude: number;
