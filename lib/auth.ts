@@ -77,6 +77,22 @@ export async function clearSession() {
   setAuthToken(null);
 }
 
+export function getPrimaryRole(session: AuthResponse | null): UserRole | null {
+  if (!session?.roles?.length) {
+    return null;
+  }
+
+  if (session.roles.includes("driver")) {
+    return "driver";
+  }
+
+  if (session.roles.includes("rider")) {
+    return "rider";
+  }
+
+  return null;
+}
+
 export function getApiErrorMessage(error: unknown) {
   if (error instanceof HttpError) {
     const detail =
