@@ -1,3 +1,4 @@
+import { Link } from "expo-router";
 import { Text, View } from "react-native";
 
 export default function HomeTabScreen() {
@@ -37,6 +38,18 @@ export default function HomeTabScreen() {
           high in your area.
         </Text>
       </View>
+
+      <Link
+        href="/profile"
+        className="mt-5 rounded-3xl border border-slate-700 bg-slate-900 px-5 py-4"
+      >
+        <Text className="text-sm font-semibold text-cyan-300">
+          Rider Profile
+        </Text>
+        <Text className="mt-1 text-base font-medium text-white">
+          View and update your rider profile, preferences, and saved places.
+        </Text>
+      </Link>
     </View>
   );
 }
