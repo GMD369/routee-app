@@ -1,8 +1,10 @@
+import { router } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { API_BASE_URL } from "./config";
-import { http, HttpError, setAuthToken } from "./http";
+import { http, HttpError, setAuthExpiredHandler, setAuthToken } from "./http";
 
 const SESSION_KEY = "routee.auth.session";
+let handlingSessionExpiry = false;
 
 export type UserRole = "rider" | "driver";
 
@@ -115,3 +117,24 @@ export function getApiErrorMessage(error: unknown) {
   if (error instanceof Error) return error.message;
   return "Something went wrong. Please try again.";
 }
+
+async function onSessionExpired() {
+  if (handlingSessionExpiry) {
+    return;
+  }
+
+  handlingSessionExpiry = true;
+  try {
+    await SecureStore.deleteItemAsync(SESSION_KEY);
+    setAuthToken(null);
+    router.replace("/login");
+  } finally {
+    setTimeout(() => {
+      handlingSessionExpiry = false;
+    }, 400);
+  }
+}
+
+setAuthExpiredHandler(() => {
+  void onSessionExpired();
+});

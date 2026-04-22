@@ -1,6 +1,7 @@
 import { API_BASE_URL } from "./config";
 
 let authToken: string | null = null;
+let authExpiredHandler: (() => void | Promise<void>) | null = null;
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -57,6 +58,14 @@ async function request<T>(path: string, options: RequestOptions) {
     const data = await parseResponseBody(response);
 
     if (!response.ok) {
+      if (
+        authToken &&
+        (response.status === 401 || response.status === 403) &&
+        authExpiredHandler
+      ) {
+        void authExpiredHandler();
+      }
+
       const message =
         typeof data === "object" &&
         data &&
@@ -108,4 +117,10 @@ export const http = {
 
 export function setAuthToken(token: string | null) {
   authToken = token;
+}
+
+export function setAuthExpiredHandler(
+  handler: (() => void | Promise<void>) | null,
+) {
+  authExpiredHandler = handler;
 }
