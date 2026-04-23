@@ -32,7 +32,7 @@ export default function LoginScreen() {
 
       await saveSession(session);
 
-      Alert.alert("Login successful", "Welcome back to Routee.", [
+      Alert.alert("Login successful", "Welcome back to Musafee.", [
         {
           text: "Continue",
           onPress: () => router.replace("/"),
@@ -52,7 +52,7 @@ export default function LoginScreen() {
     >
       <Text className="text-3xl font-black text-slate-900">Login</Text>
       <Text className="mt-2 text-sm text-slate-500">
-        Sign in with your Routee account.
+        Sign in with your Musafee account.
       </Text>
 
       <View className="mt-8 gap-4">

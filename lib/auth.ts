@@ -3,7 +3,7 @@ import * as SecureStore from "expo-secure-store";
 import { API_BASE_URL } from "./config";
 import { http, HttpError, setAuthExpiredHandler, setAuthToken } from "./http";
 
-const SESSION_KEY = "routee.auth.session";
+const SESSION_KEY = "musafee.auth.session";
 let handlingSessionExpiry = false;
 
 export type UserRole = "rider" | "driver";

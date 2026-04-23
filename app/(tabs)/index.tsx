@@ -154,7 +154,7 @@ export default function HomeTabScreen() {
         <View className="flex-row items-start justify-between">
           <View className="flex-1 pr-3">
             <Text className="text-xs uppercase tracking-[2px] text-sky-600">
-              Routee Dashboard
+              Musafee Dashboard
             </Text>
             <Text className="mt-2 text-4xl font-black leading-tight text-slate-900">
               Move Smarter,
