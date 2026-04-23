@@ -5,6 +5,7 @@ import "../lib/auth";
 export default function RootLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="onboarding" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="profile" options={{ title: "Profile" }} />
       <Stack.Screen
