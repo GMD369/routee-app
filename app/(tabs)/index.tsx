@@ -1,30 +1,154 @@
-import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Modal,
-    Pressable,
-    ScrollView,
-    Text,
-    TextInput,
-    View,
+  ActivityIndicator,
+  Alert,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Svg, { Circle, Ellipse, Path, Rect } from "react-native-svg";
 import {
-    getApiErrorMessage,
-    getPrimaryRole,
-    loadSession,
-    UserRole,
+  getApiErrorMessage,
+  getPrimaryRole,
+  loadSession,
+  UserRole,
 } from "../../lib/auth";
 import { consumePendingLocationResult } from "../../lib/locationPickerStore";
 import {
-    deleteSavedLocation,
-    getMyRiderProfile,
-    SavedLocation,
-    saveOrUpdateSavedLocation,
+  deleteSavedLocation,
+  getMyRiderProfile,
+  SavedLocation,
+  saveOrUpdateSavedLocation,
 } from "../../lib/rider";
+
+/* ── Icons ──────────────────────────────────────────────────── */
+
+function PinIcon({ color = "#fff" }: { color?: string }) {
+  return (
+    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round">
+      <Path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+      <Circle cx={12} cy={10} r={3} />
+    </Svg>
+  );
+}
+
+function DummyMap() {
+  return (
+    <Svg width="100%" height="100%" viewBox="0 0 390 320" preserveAspectRatio="xMidYMid slice">
+      {/* Base background */}
+      <Rect x={0} y={0} width={390} height={320} fill="#E8EAE6" />
+
+      {/* Grid roads — horizontal */}
+      <Rect x={0} y={48}  width={390} height={18} fill="#fff" />
+      <Rect x={0} y={110} width={390} height={14} fill="#fff" />
+      <Rect x={0} y={170} width={390} height={18} fill="#fff" />
+      <Rect x={0} y={240} width={390} height={14} fill="#fff" />
+      <Rect x={0} y={290} width={390} height={18} fill="#fff" />
+
+      {/* Grid roads — vertical */}
+      <Rect x={40}  y={0} width={18} height={320} fill="#fff" />
+      <Rect x={110} y={0} width={14} height={320} fill="#fff" />
+      <Rect x={180} y={0} width={20} height={320} fill="#fff" />
+      <Rect x={260} y={0} width={14} height={320} fill="#fff" />
+      <Rect x={330} y={0} width={18} height={320} fill="#fff" />
+
+      {/* Road center dashes — horizontal main road */}
+      <Rect x={0}   y={57} width={28} height={2} rx={1} fill="#E0D9C0" />
+      <Rect x={36}  y={57} width={28} height={2} rx={1} fill="#E0D9C0" />
+      <Rect x={72}  y={57} width={28} height={2} rx={1} fill="#E0D9C0" />
+      <Rect x={108} y={57} width={28} height={2} rx={1} fill="#E0D9C0" />
+      <Rect x={144} y={57} width={28} height={2} rx={1} fill="#E0D9C0" />
+      <Rect x={200} y={57} width={28} height={2} rx={1} fill="#E0D9C0" />
+      <Rect x={236} y={57} width={28} height={2} rx={1} fill="#E0D9C0" />
+      <Rect x={280} y={57} width={28} height={2} rx={1} fill="#E0D9C0" />
+      <Rect x={316} y={57} width={28} height={2} rx={1} fill="#E0D9C0" />
+      <Rect x={352} y={57} width={28} height={2} rx={1} fill="#E0D9C0" />
+
+      {/* Road center dashes — vertical main road */}
+      <Rect x={189} y={0}   width={2} height={28} rx={1} fill="#E0D9C0" />
+      <Rect x={189} y={36}  width={2} height={28} rx={1} fill="#E0D9C0" />
+      <Rect x={189} y={72}  width={2} height={28} rx={1} fill="#E0D9C0" />
+      <Rect x={189} y={108} width={2} height={28} rx={1} fill="#E0D9C0" />
+      <Rect x={189} y={196} width={2} height={28} rx={1} fill="#E0D9C0" />
+      <Rect x={189} y={232} width={2} height={28} rx={1} fill="#E0D9C0" />
+      <Rect x={189} y={268} width={2} height={28} rx={1} fill="#E0D9C0" />
+      <Rect x={189} y={304} width={2} height={28} rx={1} fill="#E0D9C0" />
+
+      {/* City blocks */}
+      <Rect x={58}  y={0}   width={44} height={42} rx={4} fill="#D8DDD4" />
+      <Rect x={128} y={0}   width={44} height={42} rx={4} fill="#D0D5CC" />
+      <Rect x={278} y={0}   width={44} height={42} rx={4} fill="#D8DDD4" />
+      <Rect x={348} y={0}   width={42} height={42} rx={4} fill="#D0D5CC" />
+
+      <Rect x={0}   y={66}  width={34} height={38} rx={4} fill="#D8DDD4" />
+      <Rect x={58}  y={66}  width={44} height={38} rx={4} fill="#C8CCCA" />
+      <Rect x={128} y={66}  width={44} height={38} rx={4} fill="#D8DDD4" />
+      <Rect x={278} y={66}  width={44} height={38} rx={4} fill="#D0D5CC" />
+      <Rect x={348} y={66}  width={42} height={38} rx={4} fill="#D8DDD4" />
+
+      <Rect x={0}   y={124} width={34} height={40} rx={4} fill="#D0D5CC" />
+      <Rect x={58}  y={124} width={44} height={40} rx={4} fill="#D8DDD4" />
+      <Rect x={128} y={124} width={44} height={40} rx={4} fill="#D0D5CC" />
+      <Rect x={278} y={124} width={44} height={40} rx={4} fill="#C8CCCA" />
+      <Rect x={348} y={124} width={42} height={40} rx={4} fill="#D8DDD4" />
+
+      <Rect x={0}   y={188} width={34} height={46} rx={4} fill="#D8DDD4" />
+      <Rect x={58}  y={188} width={44} height={46} rx={4} fill="#D0D5CC" />
+      <Rect x={128} y={188} width={44} height={46} rx={4} fill="#D8DDD4" />
+      <Rect x={278} y={188} width={44} height={46} rx={4} fill="#D8DDD4" />
+      <Rect x={348} y={188} width={42} height={46} rx={4} fill="#D0D5CC" />
+
+      <Rect x={0}   y={254} width={34} height={38} rx={4} fill="#D0D5CC" />
+      <Rect x={58}  y={254} width={44} height={38} rx={4} fill="#D8DDD4" />
+      <Rect x={128} y={254} width={44} height={38} rx={4} fill="#D0D5CC" />
+      <Rect x={278} y={254} width={44} height={38} rx={4} fill="#D8DDD4" />
+      <Rect x={348} y={254} width={42} height={38} rx={4} fill="#C8CCCA" />
+
+      {/* Green park block */}
+      <Rect x={200} y={124} width={52} height={40} rx={6} fill="#B8D4AC" />
+      <Rect x={200} y={188} width={52} height={46} rx={6} fill="#ACC8A4" />
+
+      {/* Park trees (tiny circles) */}
+      <Circle cx={214} cy={140} r={5} fill="#90B888" />
+      <Circle cx={228} cy={136} r={4} fill="#90B888" />
+      <Circle cx={240} cy={142} r={5} fill="#90B888" />
+      <Circle cx={220} cy={200} r={5} fill="#90B888" />
+      <Circle cx={236} cy={196} r={4} fill="#90B888" />
+      <Circle cx={246} cy={204} r={5} fill="#90B888" />
+
+      {/* Location pin — center */}
+      <Ellipse cx={195} cy={162} rx={10} ry={5} fill="rgba(0,0,0,0.15)" />
+      <Path
+        d="M195 128 C184 128 175 137 175 148 C175 162 195 178 195 178 C195 178 215 162 215 148 C215 137 206 128 195 128Z"
+        fill="#0D0D0D"
+      />
+      <Circle cx={195} cy={148} r={6} fill="#fff" />
+
+      {/* Pulse rings around pin */}
+      <Circle cx={195} cy={162} r={18} fill="none" stroke="rgba(13,13,13,0.08)" strokeWidth={1.5} />
+      <Circle cx={195} cy={162} r={28} fill="none" stroke="rgba(13,13,13,0.05)" strokeWidth={1.5} />
+    </Svg>
+  );
+}
+
+function UserSvg() {
+  return (
+    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#0D0D0D" strokeWidth={2} strokeLinecap="round">
+      <Path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <Circle cx={12} cy={7} r={4} />
+    </Svg>
+  );
+}
+
+/* ── Screen ─────────────────────────────────────────────────── */
 
 export default function HomeTabScreen() {
   const [role, setRole] = useState<UserRole | null>(null);
@@ -50,7 +174,6 @@ export default function HomeTabScreen() {
       const session = await loadSession();
       const currentRole = getPrimaryRole(session);
       setRole(currentRole);
-
       if (currentRole === "rider") {
         await refreshSavedLocations();
       }
@@ -60,16 +183,10 @@ export default function HomeTabScreen() {
   }, [refreshSavedLocations]);
 
   const createSavedLocation = useCallback(
-    async (result: {
-      name?: string;
-      address: string;
-      latitude: number;
-      longitude: number;
-    }) => {
+    async (result: { name?: string; address: string; latitude: number; longitude: number }) => {
       try {
         const profile = await getMyRiderProfile();
         const fallbackName = `Location ${profile.saved_locations.length + 1}`;
-
         await saveOrUpdateSavedLocation(profile, {
           name: result.name?.trim() || fallbackName,
           address: result.address || undefined,
@@ -77,7 +194,6 @@ export default function HomeTabScreen() {
           longitude: result.longitude,
           is_default: false,
         });
-
         await refreshSavedLocations();
       } catch (error) {
         Alert.alert("Add location failed", getApiErrorMessage(error));
@@ -86,17 +202,12 @@ export default function HomeTabScreen() {
     [refreshSavedLocations],
   );
 
-  useEffect(() => {
-    void hydrateHome();
-  }, [hydrateHome]);
+  useEffect(() => { void hydrateHome(); }, [hydrateHome]);
 
   useFocusEffect(
     useCallback(() => {
       const result = consumePendingLocationResult();
-      if (!result || result.type !== "saved") {
-        return;
-      }
-
+      if (!result || result.type !== "saved") return;
       void createSavedLocation(result);
     }, [createSavedLocation]),
   );
@@ -108,7 +219,6 @@ export default function HomeTabScreen() {
 
   function onConfirmAddLocation(useCustomName: boolean) {
     const trimmedName = newLocationName.trim();
-
     setShowAddLocationModal(false);
     router.push({
       pathname: "/map-picker",
@@ -143,196 +253,248 @@ export default function HomeTabScreen() {
   const profileRoute = isDriver ? "/driver-profile" : "/profile";
 
   return (
-    <>
-      <ScrollView
-        className="flex-1 bg-white"
-        contentContainerClassName="px-6 pb-28 pt-16"
-      >
-        <View className="absolute -left-20 top-10 h-56 w-56 rounded-full bg-sky-200/40" />
-        <View className="absolute -right-16 top-44 h-44 w-44 rounded-full bg-emerald-200/40" />
-
-        <View className="flex-row items-start justify-between">
-          <View className="flex-1 pr-3">
-            <Text className="text-xs uppercase tracking-[2px] text-sky-600">
-              Musafee Dashboard
-            </Text>
-            <Text className="mt-2 text-4xl font-black leading-tight text-slate-900">
-              Move Smarter,
-              {"\n"}
-              Every Ride
-            </Text>
-          </View>
-
-          <Pressable
-            onPress={() => router.push(profileRoute)}
-            className="mt-1 rounded-2xl border border-stone-200 bg-stone-50 px-3 py-2"
-          >
-            <Ionicons name="person-circle-outline" size={26} color="#0284c7" />
-          </Pressable>
-        </View>
-
-        <Text className="mt-3 text-base leading-6 text-slate-500">
-          Track nearby activity, manage ride requests, and get live updates in
-          one place.
-        </Text>
-
-        <View className="mt-8 rounded-3xl border border-stone-200 bg-stone-50 p-5">
-          <Text className="text-sm font-semibold text-slate-700">
-            Quick Snapshot
-          </Text>
-          <View className="mt-4 flex-row justify-between">
-            <Stat label="Nearby Drivers" value="24" />
-            <Stat label="Avg Wait" value="4 min" />
-            <Stat label="Today Trips" value="18" />
-          </View>
-        </View>
-
-        <View className="mt-5 rounded-3xl border border-sky-200 bg-sky-50 p-5">
-          <Text className="text-sm font-semibold text-sky-700">Live Note</Text>
-          <Text className="mt-2 text-sm leading-6 text-slate-600">
-            Premium lane routing is active. Driver matching quality is currently
-            high in your area.
-          </Text>
-        </View>
-
-        <Pressable
-          onPress={() => router.push(profileRoute)}
-          className="mt-5 rounded-3xl border border-stone-200 bg-stone-50 px-5 py-4"
-        >
-          <Text className="text-sm font-semibold text-sky-600">
-            {isDriver ? "Driver Profile" : "Rider Profile"}
-          </Text>
-          <Text className="mt-1 text-base font-medium text-slate-900">
-            {isDriver
-              ? "View verification status and driver account details."
-              : "View and update your rider profile, preferences, and saved places."}
-          </Text>
-        </Pressable>
-
-        {!isDriver ? (
-          <View className="mt-5 rounded-3xl border border-stone-200 bg-stone-50 p-5">
-            <View className="flex-row items-center justify-between">
-              <Text className="text-sm font-semibold text-slate-800">
-                Saved Locations
-              </Text>
-              <Pressable
-                onPress={onAddLocation}
-                className="rounded-xl border border-sky-300 bg-sky-50 px-3 py-2"
-              >
-                <Text className="text-xs font-semibold text-sky-700">
-                  Add Location
-                </Text>
-              </Pressable>
+    <View style={s.root}>
+      {/* Dummy map background */}
+      <View style={s.mapArea}>
+        <DummyMap />
+        <SafeAreaView style={s.mapOverlay} edges={["top"]}>
+          <View style={s.topBar}>
+            <View>
+              <Text style={s.greeting}>Good morning 👋</Text>
+              <Text style={s.appName}>Musafee</Text>
             </View>
+            <TouchableOpacity style={s.profileBtn} onPress={() => router.push(profileRoute)}>
+              <UserSvg />
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </View>
 
-            {loadingLocations ? (
-              <View className="mt-4 flex-row items-center gap-2">
-                <ActivityIndicator color="#0284c7" />
-                <Text className="text-sm text-slate-500">
-                  Loading locations...
-                </Text>
+      {/* Bottom sheet */}
+      <View style={s.sheet}>
+        <View style={s.sheetHandle} />
+
+        {isDriver ? (
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.driverContent}>
+            <Text style={s.driverTitle}>Driver Dashboard</Text>
+            <Text style={s.driverSub}>Your rides and earnings will appear here soon.</Text>
+            <TouchableOpacity style={s.primaryBtn} onPress={() => router.push(profileRoute)}>
+              <Text style={s.primaryBtnText}>View Driver Profile</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        ) : (
+          <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            {/* Quick chips */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.chipsScroll} contentContainerStyle={s.chipsInner}>
+              {savedLocations.length > 0
+                ? savedLocations.slice(0, 4).map((loc) => (
+                    <TouchableOpacity key={loc.id} style={s.chip} onPress={() => onLocationPress(loc)}>
+                      <Text style={s.chipText}>{loc.name}</Text>
+                    </TouchableOpacity>
+                  ))
+                : (
+                  <>
+                    <TouchableOpacity style={s.chip} onPress={onAddLocation}><Text style={s.chipText}>🏠 Home</Text></TouchableOpacity>
+                    <TouchableOpacity style={s.chip} onPress={onAddLocation}><Text style={s.chipText}>💼 Work</Text></TouchableOpacity>
+                    <TouchableOpacity style={s.chip} onPress={onAddLocation}><Text style={s.chipText}>🛍️ Mall</Text></TouchableOpacity>
+                    <TouchableOpacity style={s.chip} onPress={onAddLocation}><Text style={s.chipText}>🏥 Hospital</Text></TouchableOpacity>
+                  </>
+                )
+              }
+            </ScrollView>
+
+            {/* Confirm button */}
+            <TouchableOpacity style={s.primaryBtn} onPress={onAddLocation}>
+              <PinIcon />
+              <Text style={s.primaryBtnText}>Confirm Pickup Location</Text>
+            </TouchableOpacity>
+
+            {/* Saved locations list */}
+            {loadingLocations && (
+              <View style={s.loadingRow}>
+                <ActivityIndicator color="#0D0D0D" size="small" />
+                <Text style={s.loadingText}>Loading locations…</Text>
               </View>
-            ) : savedLocations.length > 0 ? (
-              <View className="mt-4 gap-3">
-                {savedLocations.map((location) => (
-                  <Pressable
-                    key={location.id}
-                    onPress={() => onLocationPress(location)}
-                    className="rounded-2xl border border-stone-200 bg-white p-4"
+            )}
+
+            {savedLocations.length > 0 && (
+              <View style={s.savedSection}>
+                <View style={s.savedHeader}>
+                  <Text style={s.savedTitle}>Saved Locations</Text>
+                  <TouchableOpacity style={s.addBtn} onPress={onAddLocation}>
+                    <Text style={s.addBtnText}>+ Add</Text>
+                  </TouchableOpacity>
+                </View>
+                {savedLocations.map((loc, i) => (
+                  <TouchableOpacity
+                    key={loc.id}
+                    style={[s.savedItem, i < savedLocations.length - 1 && s.savedItemBorder]}
+                    onPress={() => onLocationPress(loc)}
                   >
-                    <Text className="text-sm font-semibold text-slate-900">
-                      {location.name}
-                    </Text>
-                    <Text
-                      className="mt-1 text-xs text-slate-500"
-                      numberOfLines={2}
-                    >
-                      {location.address || "Address not available"}
-                    </Text>
-                    <Text className="mt-1 text-[11px] text-slate-400">
-                      {location.latitude.toFixed(5)},{" "}
-                      {location.longitude.toFixed(5)}
-                    </Text>
-                  </Pressable>
+                    <View style={s.savedItemIcon}>
+                      <PinIcon />
+                    </View>
+                    <View style={s.savedItemBody}>
+                      <Text style={s.savedItemName}>{loc.name}</Text>
+                      <Text style={s.savedItemAddr} numberOfLines={1}>{loc.address || "No address"}</Text>
+                    </View>
+                    <Text style={s.chevron}>›</Text>
+                  </TouchableOpacity>
                 ))}
               </View>
-            ) : (
-              <Text className="mt-4 text-sm text-slate-500">
-                No saved locations yet. Tap Add Location to create one.
-              </Text>
             )}
-          </View>
-        ) : null}
-      </ScrollView>
 
+            <View style={{ height: 20 }} />
+          </ScrollView>
+        )}
+      </View>
+
+      {/* Add Location Modal */}
       <Modal
         visible={showAddLocationModal}
         transparent
         animationType="fade"
         onRequestClose={() => setShowAddLocationModal(false)}
       >
-        <View className="flex-1 items-center justify-center bg-black/40 px-6">
-          <View className="w-full rounded-2xl bg-white p-5">
-            <Text className="text-lg font-bold text-slate-900">
-              Add Location
-            </Text>
-            <Text className="mt-2 text-sm text-slate-500">
-              Enter a name or skip to use automatic naming.
-            </Text>
-
+        <View style={s.overlay}>
+          <View style={s.modalCard}>
+            <Text style={s.modalTitle}>Add Location</Text>
+            <Text style={s.modalSub}>Enter a name or skip to use automatic naming.</Text>
             <TextInput
               value={newLocationName}
               onChangeText={setNewLocationName}
               placeholder="e.g. Gym, Grandma House"
-              placeholderTextColor="#94a3b8"
-              className="mt-4 rounded-xl border border-stone-300 bg-stone-50 px-4 py-3 text-base text-slate-900"
+              placeholderTextColor="#C2C2C2"
+              style={s.modalInput}
             />
-
-            <View className="mt-4 flex-row gap-3">
-              <Pressable
-                onPress={() => setShowAddLocationModal(false)}
-                className="flex-1 items-center rounded-xl border border-stone-300 bg-stone-100 px-4 py-3"
-              >
-                <Text className="text-sm font-semibold text-slate-700">
-                  Cancel
-                </Text>
-              </Pressable>
-
-              <Pressable
-                onPress={() => onConfirmAddLocation(false)}
-                className="flex-1 items-center rounded-xl border border-slate-300 bg-white px-4 py-3"
-              >
-                <Text className="text-sm font-semibold text-slate-700">
-                  Skip Name
-                </Text>
-              </Pressable>
-
-              <Pressable
-                onPress={() => onConfirmAddLocation(true)}
-                className="flex-1 items-center rounded-xl border border-slate-900 bg-slate-900 px-4 py-3"
-              >
-                <Text className="text-sm font-semibold text-white">
-                  Continue
-                </Text>
-              </Pressable>
+            <View style={s.modalActions}>
+              <TouchableOpacity style={s.modalCancel} onPress={() => setShowAddLocationModal(false)}>
+                <Text style={s.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={s.modalSkip} onPress={() => onConfirmAddLocation(false)}>
+                <Text style={s.modalSkipText}>Skip Name</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={s.modalContinue} onPress={() => onConfirmAddLocation(true)}>
+                <Text style={s.modalContinueText}>Continue</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
-    </>
-  );
-}
-
-type StatProps = {
-  label: string;
-  value: string;
-};
-
-function Stat({ label, value }: StatProps) {
-  return (
-    <View className="items-start">
-      <Text className="text-xl font-black text-slate-900">{value}</Text>
-      <Text className="mt-1 text-xs text-slate-500">{label}</Text>
     </View>
   );
 }
+
+/* ── Styles ─────────────────────────────────────────────────── */
+
+const s = StyleSheet.create({
+  root: { flex: 1, backgroundColor: "#E8EAE6" },
+
+  // Map area
+  mapArea: { flex: 1, backgroundColor: "#E8EAE6", overflow: "hidden" },
+  mapOverlay: { position: "absolute", top: 0, left: 0, right: 0 },
+  topBar: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: 22, paddingTop: 12, paddingBottom: 16,
+  },
+  greeting: { fontSize: 13, color: "rgba(0,0,0,0.4)", fontWeight: "500" },
+  appName: { fontSize: 22, fontWeight: "800", color: "#1A1A1A", letterSpacing: -0.5, marginTop: 2 },
+  profileBtn: {
+    width: 44, height: 44, borderRadius: 14, backgroundColor: "#fff",
+    alignItems: "center", justifyContent: "center",
+    borderWidth: 1.5, borderColor: "#EBEBEB",
+    shadowColor: "#000", shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1, shadowRadius: 8, elevation: 4,
+  },
+
+  // Sheet
+  sheet: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 28, borderTopRightRadius: 28,
+    paddingHorizontal: 22, paddingTop: 14,
+    maxHeight: "72%",
+    shadowColor: "#000", shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.08, shadowRadius: 20, elevation: 16,
+  },
+  sheetHandle: {
+    width: 36, height: 4, backgroundColor: "#E0E0E0",
+    borderRadius: 2, alignSelf: "center", marginBottom: 22,
+  },
+
+  // Chips
+  chipsScroll: { marginBottom: 16 },
+  chipsInner: { gap: 8, paddingRight: 4 },
+  chip: {
+    backgroundColor: "#F5F5F5", borderRadius: 20,
+    paddingHorizontal: 14, paddingVertical: 8,
+  },
+  chipText: { fontSize: 13, fontWeight: "600", color: "#424242" },
+
+  // Primary button
+  primaryBtn: {
+    backgroundColor: "#0D0D0D", borderRadius: 16,
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+    paddingVertical: 16, gap: 8, marginBottom: 20,
+  },
+  primaryBtnText: { fontSize: 15, fontWeight: "700", color: "#fff" },
+
+  // Loading
+  loadingRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 8 },
+  loadingText: { fontSize: 13, color: "#9E9E9E" },
+
+  // Saved locations
+  savedSection: { marginBottom: 8 },
+  savedHeader: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12,
+  },
+  savedTitle: { fontSize: 13, fontWeight: "700", color: "#0D0D0D" },
+  addBtn: { backgroundColor: "#F5F5F5", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 6 },
+  addBtnText: { fontSize: 12, fontWeight: "600", color: "#424242" },
+  savedItem: {
+    flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12,
+  },
+  savedItemBorder: { borderBottomWidth: 1, borderBottomColor: "#F5F5F5" },
+  savedItemIcon: {
+    width: 36, height: 36, borderRadius: 10, backgroundColor: "#0D0D0D",
+    alignItems: "center", justifyContent: "center",
+  },
+  savedItemBody: { flex: 1 },
+  savedItemName: { fontSize: 13, fontWeight: "600", color: "#0D0D0D" },
+  savedItemAddr: { fontSize: 11, color: "#9E9E9E", marginTop: 2 },
+  chevron: { fontSize: 20, color: "#C2C2C2" },
+
+  // Driver content
+  driverContent: { paddingBottom: 24 },
+  driverTitle: { fontSize: 20, fontWeight: "800", color: "#0D0D0D", letterSpacing: -0.5, marginBottom: 8 },
+  driverSub: { fontSize: 14, color: "#9E9E9E", marginBottom: 20, lineHeight: 22 },
+
+  // Modal
+  overlay: {
+    flex: 1, backgroundColor: "rgba(0,0,0,0.4)", alignItems: "center", justifyContent: "center",
+    paddingHorizontal: 24,
+  },
+  modalCard: { width: "100%", backgroundColor: "#fff", borderRadius: 20, padding: 22 },
+  modalTitle: { fontSize: 18, fontWeight: "800", color: "#0D0D0D", marginBottom: 6 },
+  modalSub: { fontSize: 13, color: "#9E9E9E", marginBottom: 16 },
+  modalInput: {
+    borderWidth: 1.5, borderColor: "#E8E8E8", borderRadius: 14,
+    backgroundColor: "#FAFAFA", paddingHorizontal: 16, paddingVertical: 14,
+    fontSize: 15, color: "#0D0D0D", marginBottom: 16,
+  },
+  modalActions: { flexDirection: "row", gap: 10 },
+  modalCancel: {
+    flex: 1, alignItems: "center", paddingVertical: 12, borderRadius: 14,
+    borderWidth: 1.5, borderColor: "#E8E8E8", backgroundColor: "#F8F8F8",
+  },
+  modalCancelText: { fontSize: 13, fontWeight: "600", color: "#757575" },
+  modalSkip: {
+    flex: 1, alignItems: "center", paddingVertical: 12, borderRadius: 14,
+    borderWidth: 1.5, borderColor: "#E8E8E8", backgroundColor: "#fff",
+  },
+  modalSkipText: { fontSize: 13, fontWeight: "600", color: "#424242" },
+  modalContinue: {
+    flex: 1, alignItems: "center", paddingVertical: 12, borderRadius: 14,
+    backgroundColor: "#0D0D0D",
+  },
+  modalContinueText: { fontSize: 13, fontWeight: "700", color: "#fff" },
+});
