@@ -1,61 +1,120 @@
 import { markOnboardingCompleted } from "@/lib/onboardingStore";
 import { router } from "expo-router";
 import { useState } from "react";
-import {
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Svg, {
+  Circle,
+  Ellipse,
+  Path,
+  Rect,
+  Text as SvgText,
+} from "react-native-svg";
+
+/* ── SVG Illustrations (exact from design file) ───────────── */
+
+function IllustrationRides() {
+  return (
+    <Svg width={140} height={120} viewBox="0 0 140 120" fill="none">
+      <Ellipse cx={70} cy={108} rx={48} ry={8} fill="#e8e8e8" />
+      <Rect x={22} y={52} width={96} height={44} rx={14} fill="#1A1A1A" />
+      <Rect x={30} y={44} width={80} height={18} rx={8} fill="#333" />
+      <Circle cx={42} cy={96} r={10} fill="#fff" stroke="#1A1A1A" strokeWidth={2} />
+      <Circle cx={42} cy={96} r={5} fill="#1A1A1A" />
+      <Circle cx={98} cy={96} r={10} fill="#fff" stroke="#1A1A1A" strokeWidth={2} />
+      <Circle cx={98} cy={96} r={5} fill="#1A1A1A" />
+      <Rect x={55} y={60} width={30} height={18} rx={5} fill="#fff" fillOpacity={0.15} />
+      <Path d="M30 52 L22 38" stroke="#1A1A1A" strokeWidth={3} strokeLinecap="round" />
+      <Path d="M110 52 L118 38" stroke="#1A1A1A" strokeWidth={3} strokeLinecap="round" />
+      <Circle cx={70} cy={18} r={12} fill="#D9D9D9" />
+      <Path d="M54 52 C54 40, 86 40, 86 52" fill="#D9D9D9" />
+    </Svg>
+  );
+}
+
+function IllustrationSave() {
+  return (
+    <Svg width={140} height={120} viewBox="0 0 140 120" fill="none">
+      <Circle cx={35} cy={50} r={18} fill="#E8E8E8" stroke="#1A1A1A" strokeWidth={2} />
+      <Circle cx={35} cy={50} r={8} fill="#1A1A1A" />
+      <Circle cx={105} cy={50} r={18} fill="#E8E8E8" stroke="#1A1A1A" strokeWidth={2} />
+      <Circle cx={105} cy={50} r={8} fill="#1A1A1A" />
+      <Path
+        d="M53 50 L87 50"
+        stroke="#1A1A1A"
+        strokeWidth={2.5}
+        strokeDasharray="5 4"
+        strokeLinecap="round"
+      />
+      <Path
+        d="M80 44 L88 50 L80 56"
+        stroke="#1A1A1A"
+        strokeWidth={2.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Rect x={48} y={76} width={44} height={28} rx={10} fill="#1A1A1A" />
+      <SvgText
+        x={70}
+        y={95}
+        textAnchor="middle"
+        fill="white"
+        fontSize={13}
+        fontWeight="700"
+      >
+        $4.50
+      </SvgText>
+      <Path d="M70 104 L70 112" stroke="#1A1A1A" strokeWidth={2} />
+      <Path d="M35 68 L48 80" stroke="#1A1A1A" strokeWidth={2} strokeDasharray="3 3" />
+      <Path d="M105 68 L92 80" stroke="#1A1A1A" strokeWidth={2} strokeDasharray="3 3" />
+    </Svg>
+  );
+}
+
+function IllustrationVerified() {
+  return (
+    <Svg width={140} height={120} viewBox="0 0 140 120" fill="none">
+      <Rect x={20} y={20} width={100} height={80} rx={16} fill="#F0F0F0" stroke="#1A1A1A" strokeWidth={2} />
+      <Rect x={32} y={36} width={40} height={6} rx={3} fill="#1A1A1A" />
+      <Rect x={32} y={48} width={60} height={4} rx={2} fill="#D9D9D9" />
+      <Rect x={32} y={58} width={50} height={4} rx={2} fill="#D9D9D9" />
+      <Circle cx={100} cy={70} r={20} fill="#1A1A1A" />
+      <Path
+        d="M91 70 L97 76 L109 64"
+        stroke="white"
+        strokeWidth={2.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Circle cx={32} cy={86} r={4} fill="#1A1A1A" fillOpacity={0.2} />
+      <Circle cx={44} cy={86} r={4} fill="#1A1A1A" fillOpacity={0.2} />
+      <Circle cx={56} cy={86} r={4} fill="#1A1A1A" fillOpacity={0.4} />
+      <Circle cx={68} cy={86} r={4} fill="#1A1A1A" />
+    </Svg>
+  );
+}
+
+/* ── Screen data ────────────────────────────────────────────── */
 
 const SCREENS = [
   {
-    id: 1,
-    title: "Get There",
-    subtitle: "Smarter",
-    description:
-      "Book affordable rides in seconds. Tell us where you're headed and we'll match you with a nearby driver — no calls, no haggling.",
-    steps: [
-      "Open the app and set your destination",
-      "Get matched with a nearby driver",
-      "Sit back and enjoy the ride",
-    ],
-    note: "No waiting, no haggling. Tap once and you're on your way.",
-    bgColor: "#e0f2fe",
-    icon: "📍",
+    illustration: IllustrationRides,
+    title: "Find Rides Near You",
+    desc: "Browse available carpools on your route in real-time. Get picked up right from your doorstep.",
   },
   {
-    id: 2,
-    title: "Ride With",
-    subtitle: "Confidence",
-    description:
-      "Every driver on Musafee is verified, trained, and rated by real passengers. Share your live trip for extra peace of mind.",
-    steps: [
-      "Verified and rated drivers only",
-      "Share live trip with loved ones",
-      "Rate your experience after every ride",
-    ],
-    note: "Your safety is our highest priority on every single journey.",
-    bgColor: "#d1fae5",
-    icon: "🛡️",
+    illustration: IllustrationSave,
+    title: "Share & Save Money",
+    desc: "Split fuel costs with fellow commuters. Save up to 60% compared to riding alone every day.",
   },
   {
-    id: 3,
-    title: "Drive On",
-    subtitle: "Your Terms",
-    description:
-      "Turn your free time into steady income. Go online whenever you want, accept rides on your schedule, and get paid fast.",
-    steps: [
-      "Sign up and get verified as a driver",
-      "Go online whenever you choose",
-      "Earn on your own schedule",
-    ],
-    note: "Join thousands of drivers already earning with Musafee across Pakistan.",
-    bgColor: "#fef3c7",
-    icon: "💰",
+    illustration: IllustrationVerified,
+    title: "Safe & Verified Rides",
+    desc: "All drivers are ID-verified and rated by the community. Travel with confidence every journey.",
   },
 ];
+
+/* ── Component ──────────────────────────────────────────────── */
 
 export default function OnboardingScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -65,13 +124,12 @@ export default function OnboardingScreen() {
     try {
       setIsLoading(true);
       await markOnboardingCompleted();
-      router.replace("/login");
     } catch {
-      // silently fall through to login
-      router.replace("/login");
+      // continue regardless
     } finally {
       setIsLoading(false);
     }
+    router.replace("/login");
   }
 
   function handleNext() {
@@ -87,73 +145,53 @@ export default function OnboardingScreen() {
   }
 
   const screen = SCREENS[currentIndex];
+  const Illustration = screen.illustration;
+  const isFirst = currentIndex === 0;
   const isLast = currentIndex === SCREENS.length - 1;
 
   return (
     <SafeAreaView style={styles.root}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.logo}>MUSAFEE</Text>
-        <TouchableOpacity
-          onPress={() => void finish()}
-          disabled={isLoading}
-          style={styles.skipBtn}
-        >
-          <Text style={styles.skipText}>{isLast ? "" : "Skip"}</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Content card */}
-      <View style={[styles.card, { backgroundColor: screen.bgColor }]}>
-        {/* Icon */}
-        <View style={styles.iconBox}>
-          <Text style={styles.iconText}>{screen.icon}</Text>
-        </View>
-
-        {/* Title */}
-        <Text style={styles.title}>{screen.title}</Text>
-        <Text style={styles.titleAccent}>{screen.subtitle}</Text>
-
-        {/* Description */}
-        <Text style={styles.description}>{screen.description}</Text>
-
-        {/* Steps */}
-        <View style={styles.stepsContainer}>
-          {screen.steps.map((step, i) => (
-            <View key={step} style={styles.stepRow}>
-              <View style={styles.stepBadge}>
-                <Text style={styles.stepNumber}>{i + 1}</Text>
-              </View>
-              <Text style={styles.stepText}>{step}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Note */}
-        <View style={styles.noteBox}>
-          <Text style={styles.noteText}>{screen.note}</Text>
-        </View>
-      </View>
-
-      {/* Bottom */}
-      <View style={styles.bottom}>
-        {/* Dots */}
-        <View style={styles.dots}>
-          {SCREENS.map((_, i) => (
+      <View style={styles.inner}>
+        {/* Skip */}
+        <View style={styles.skipRow}>
+          {!isLast ? (
             <TouchableOpacity
-              key={i}
-              onPress={() => setCurrentIndex(i)}
-              style={[
-                styles.dot,
-                i === currentIndex ? styles.dotActive : styles.dotInactive,
-              ]}
-            />
-          ))}
+              onPress={() => void finish()}
+              disabled={isLoading}
+              hitSlop={{ top: 12, bottom: 12, left: 16, right: 16 }}
+            >
+              <Text style={styles.skipText}>Skip</Text>
+            </TouchableOpacity>
+          ) : (
+            <View />
+          )}
         </View>
 
-        {/* Buttons */}
-        <View style={styles.buttons}>
-          {currentIndex > 0 && (
+        {/* Center: illustration + dots + text */}
+        <View style={styles.contentArea}>
+          <View style={styles.illustrationCard}>
+            <Illustration />
+          </View>
+
+          <View style={styles.dots}>
+            {SCREENS.map((_, i) => (
+              <View
+                key={i}
+                style={[
+                  styles.dot,
+                  i === currentIndex ? styles.dotActive : styles.dotInactive,
+                ]}
+              />
+            ))}
+          </View>
+
+          <Text style={styles.title}>{screen.title}</Text>
+          <Text style={styles.desc}>{screen.desc}</Text>
+        </View>
+
+        {/* CTA */}
+        <View style={styles.cta}>
+          {!isFirst && (
             <TouchableOpacity
               onPress={handlePrev}
               disabled={isLoading}
@@ -165,10 +203,10 @@ export default function OnboardingScreen() {
           <TouchableOpacity
             onPress={handleNext}
             disabled={isLoading}
-            style={styles.btnNext}
+            style={[styles.btnNext, isFirst && styles.btnNextFull]}
           >
             <Text style={styles.btnNextText}>
-              {isLoading ? "Loading..." : isLast ? "Get Started" : "Next"}
+              {isLoading ? "..." : isLast ? "Get Started" : "Next"}
             </Text>
           </TouchableOpacity>
         </View>
@@ -182,162 +220,99 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#ffffff",
   },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 24,
-    paddingVertical: 16,
+  inner: {
+    flex: 1,
+    paddingHorizontal: 28,
+    paddingTop: 20,
   },
-  logo: {
-    fontSize: 22,
-    fontWeight: "900",
-    color: "#0f172a",
-    letterSpacing: 1,
-  },
-  skipBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+  skipRow: {
+    alignItems: "flex-end",
+    paddingTop: 8,
+    marginBottom: 4,
+    minHeight: 36,
+    justifyContent: "center",
   },
   skipText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#94a3b8",
-  },
-  card: {
-    flex: 1,
-    marginHorizontal: 16,
-    marginBottom: 12,
-    borderRadius: 28,
-    paddingHorizontal: 24,
-    paddingTop: 32,
-    paddingBottom: 24,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  iconBox: {
-    width: 120,
-    height: 120,
-    borderRadius: 28,
-    backgroundColor: "rgba(255,255,255,0.7)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 24,
-  },
-  iconText: {
-    fontSize: 56,
-  },
-  title: {
-    fontSize: 40,
-    fontWeight: "900",
-    color: "#0f172a",
-    textAlign: "center",
-    lineHeight: 46,
-  },
-  titleAccent: {
-    fontSize: 40,
-    fontWeight: "900",
-    color: "#0284c7",
-    textAlign: "center",
-    lineHeight: 46,
-    marginBottom: 16,
-  },
-  description: {
+    color: "#9E9E9E",
     fontSize: 14,
     fontWeight: "500",
-    color: "#475569",
-    textAlign: "center",
-    lineHeight: 22,
-    marginBottom: 20,
   },
-  stepsContainer: {
-    width: "100%",
-    gap: 10,
-    marginBottom: 16,
-  },
-  stepRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.65)",
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 12,
-  },
-  stepBadge: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "#0f172a",
+  contentArea: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
   },
-  stepNumber: {
-    color: "#ffffff",
-    fontSize: 13,
-    fontWeight: "800",
-  },
-  stepText: {
-    flex: 1,
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#1e293b",
-  },
-  noteBox: {
-    width: "100%",
-    backgroundColor: "#0f172a",
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  noteText: {
-    color: "#ffffff",
-    fontSize: 13,
-    fontWeight: "500",
-    textAlign: "center",
-    lineHeight: 20,
-  },
-  bottom: {
-    paddingHorizontal: 24,
-    paddingBottom: 24,
-    gap: 16,
+  illustrationCard: {
+    width: 220,
+    height: 220,
+    borderRadius: 40,
+    backgroundColor: "#F5F5F5",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 32,
   },
   dots: {
     flexDirection: "row",
-    justifyContent: "center",
     gap: 8,
+    marginBottom: 36,
   },
   dot: {
-    height: 10,
-    borderRadius: 5,
+    height: 8,
+    borderRadius: 4,
   },
   dotActive: {
-    width: 28,
-    backgroundColor: "#0f172a",
+    width: 24,
+    backgroundColor: "#1A1A1A",
   },
   dotInactive: {
-    width: 10,
-    backgroundColor: "#cbd5e1",
+    width: 8,
+    backgroundColor: "#E0E0E0",
   },
-  buttons: {
-    gap: 10,
+  title: {
+    fontSize: 28,
+    fontWeight: "800",
+    letterSpacing: -0.8,
+    textAlign: "center",
+    color: "#0D0D0D",
+    marginBottom: 12,
+  },
+  desc: {
+    fontSize: 15,
+    color: "#757575",
+    textAlign: "center",
+    lineHeight: 24,
+    maxWidth: 280,
+  },
+  cta: {
+    paddingBottom: 48,
+    flexDirection: "row",
+    gap: 12,
   },
   btnBack: {
-    backgroundColor: "#f1f5f9",
-    borderRadius: 14,
+    flex: 1,
     paddingVertical: 16,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: "#E8E8E8",
+    backgroundColor: "transparent",
     alignItems: "center",
+    justifyContent: "center",
   },
   btnBackText: {
     fontSize: 16,
-    fontWeight: "700",
-    color: "#0f172a",
+    fontWeight: "600",
+    color: "#0D0D0D",
   },
   btnNext: {
-    backgroundColor: "#0f172a",
-    borderRadius: 14,
+    flex: 2,
     paddingVertical: 16,
+    borderRadius: 16,
+    backgroundColor: "#0D0D0D",
     alignItems: "center",
+    justifyContent: "center",
+  },
+  btnNextFull: {
+    flex: 1,
   },
   btnNextText: {
     fontSize: 16,

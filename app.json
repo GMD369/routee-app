@@ -33,9 +33,9 @@
         "expo-splash-screen",
         {
           "image": "./assets/images/musafee.png",
-          "imageWidth": 200,
+          "imageWidth": 120,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
+          "backgroundColor": "#000000",
           "dark": {
             "backgroundColor": "#000000"
           }
