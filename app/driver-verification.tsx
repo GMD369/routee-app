@@ -142,8 +142,8 @@ export default function DriverVerificationScreen() {
 
   if (loading) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
-        <ActivityIndicator color="#0284c7" />
+      <View className="flex-1 items-center justify-center bg-slate-50">
+        <ActivityIndicator color="#0f172a" />
         <Text className="mt-3 text-sm text-slate-500">
           Loading verification...
         </Text>
@@ -154,7 +154,7 @@ export default function DriverVerificationScreen() {
   if (!isAllowed) {
     return (
       <ScrollView
-        className="flex-1 bg-white"
+        className="flex-1 bg-slate-50"
         contentContainerClassName="px-6 pb-16 pt-12"
       >
         <Text className="text-3xl font-black text-slate-900">
@@ -166,7 +166,7 @@ export default function DriverVerificationScreen() {
 
         <Pressable
           onPress={() => router.replace("/driver-profile")}
-          className="mt-7 rounded-2xl border border-stone-200 bg-stone-50 px-5 py-4"
+          className="mt-7 rounded-2xl border border-slate-200 bg-white px-5 py-4"
         >
           <Text className="text-center text-lg font-semibold text-sky-600">
             Back to Driver Profile
@@ -180,7 +180,7 @@ export default function DriverVerificationScreen() {
 
   return (
     <ScrollView
-      className="flex-1 bg-white"
+      className="flex-1 bg-slate-50"
       contentContainerClassName="px-6 pb-16 pt-12"
     >
       <Text className="text-3xl font-black text-slate-900">
@@ -208,8 +208,8 @@ export default function DriverVerificationScreen() {
           </Pressable>
         </View>
       ) : (
-        <View className="mt-6 rounded-2xl border border-stone-200 bg-stone-50 p-4">
-          <Text className="text-sm font-semibold text-slate-700">
+        <View className="mt-6 rounded-2xl border border-slate-200 bg-white p-4">
+          <Text className="text-sm font-semibold text-slate-900">
             CNIC Number
           </Text>
           <TextInput
@@ -219,34 +219,34 @@ export default function DriverVerificationScreen() {
             maxLength={13}
             placeholder="13 digits without dashes"
             placeholderTextColor="#94a3b8"
-            className="mt-2 rounded-xl border border-stone-300 bg-white px-4 py-3 text-base text-slate-900"
+            className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-base text-slate-900"
           />
 
-          <Text className="mb-2 mt-4 text-sm font-semibold text-slate-700">
+          <Text className="mb-2 mt-4 text-sm font-semibold text-slate-900">
             CNIC Front Image
           </Text>
           <Pressable
             onPress={() => void pickDocument(setCnicFrontFile, "CNIC Front")}
-            className="rounded-xl border border-stone-300 bg-white px-4 py-3"
+            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3"
           >
             <Text className="text-sm text-sky-600">
               {cnicFrontFile ? cnicFrontFile.name : "Select CNIC Front"}
             </Text>
           </Pressable>
 
-          <Text className="mb-2 mt-4 text-sm font-semibold text-slate-700">
+          <Text className="mb-2 mt-4 text-sm font-semibold text-slate-900">
             CNIC Back Image
           </Text>
           <Pressable
             onPress={() => void pickDocument(setCnicBackFile, "CNIC Back")}
-            className="rounded-xl border border-stone-300 bg-white px-4 py-3"
+            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3"
           >
             <Text className="text-sm text-sky-600">
               {cnicBackFile ? cnicBackFile.name : "Select CNIC Back"}
             </Text>
           </Pressable>
 
-          <Text className="mb-2 mt-4 text-sm font-semibold text-slate-700">
+          <Text className="mb-2 mt-4 text-sm font-semibold text-slate-900">
             License Number (Optional)
           </Text>
           <TextInput
@@ -254,15 +254,15 @@ export default function DriverVerificationScreen() {
             onChangeText={setLicenseNumber}
             placeholder="Optional"
             placeholderTextColor="#94a3b8"
-            className="rounded-xl border border-stone-300 bg-white px-4 py-3 text-base text-slate-900"
+            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-base text-slate-900"
           />
 
-          <Text className="mb-2 mt-4 text-sm font-semibold text-slate-700">
+          <Text className="mb-2 mt-4 text-sm font-semibold text-slate-900">
             License Image (Optional)
           </Text>
           <Pressable
             onPress={() => void pickDocument(setLicenseFile, "License")}
-            className="rounded-xl border border-stone-300 bg-white px-4 py-3"
+            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3"
           >
             <Text className="text-sm text-sky-600">
               {licenseFile
@@ -274,7 +274,7 @@ export default function DriverVerificationScreen() {
           <Pressable
             onPress={() => void onSubmitVerificationDocuments()}
             disabled={uploadingDocs}
-            className="mt-5 items-center rounded-xl bg-emerald-500 px-4 py-3"
+            className="mt-5 items-center rounded-xl bg-slate-900 px-4 py-3"
           >
             {uploadingDocs ? (
               <ActivityIndicator color="#ffffff" />
@@ -287,7 +287,7 @@ export default function DriverVerificationScreen() {
 
           <Pressable
             onPress={() => router.back()}
-            className="mt-3 items-center rounded-xl border border-stone-300 bg-white px-4 py-3"
+            className="mt-3 items-center rounded-xl border border-slate-200 bg-white px-4 py-3"
           >
             <Text className="text-base font-semibold text-slate-700">
               Cancel

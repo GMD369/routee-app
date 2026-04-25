@@ -142,8 +142,8 @@ export default function DriverProfileScreen() {
 
   if (!sessionChecked || loading) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
-        <ActivityIndicator color="#0284c7" />
+      <View className="flex-1 items-center justify-center bg-slate-50">
+        <ActivityIndicator color="#0f172a" />
         <Text className="mt-3 text-sm text-slate-500">Loading profile...</Text>
       </View>
     );
@@ -152,17 +152,19 @@ export default function DriverProfileScreen() {
   if (!isLoggedIn) {
     return (
       <ScrollView
-        className="flex-1 bg-white"
+        className="flex-1 bg-slate-50"
         contentContainerClassName="px-6 pb-28 pt-16"
       >
-        <Text className="text-3xl font-black text-slate-900">Driver Profile</Text>
+        <Text className="text-3xl font-black text-slate-900">
+          Driver Profile
+        </Text>
         <Text className="mt-2 text-sm text-slate-500">
           Login to view your driver profile.
         </Text>
 
         <Pressable
           onPress={() => router.push("/login")}
-          className="mt-7 rounded-2xl border border-stone-200 bg-stone-50 px-5 py-4"
+          className="mt-7 rounded-2xl border border-slate-200 bg-white px-5 py-4"
         >
           <Text className="text-center text-lg font-semibold text-slate-700">
             Login
@@ -175,17 +177,19 @@ export default function DriverProfileScreen() {
   if (!isDriver) {
     return (
       <ScrollView
-        className="flex-1 bg-white"
+        className="flex-1 bg-slate-50"
         contentContainerClassName="px-6 pb-28 pt-16"
       >
-        <Text className="text-3xl font-black text-slate-900">Driver Profile</Text>
+        <Text className="text-3xl font-black text-slate-900">
+          Driver Profile
+        </Text>
         <Text className="mt-2 text-sm leading-6 text-slate-500">
           This screen is available for driver accounts only.
         </Text>
 
         <Pressable
           onPress={() => router.replace("/profile")}
-          className="mt-7 rounded-2xl border border-stone-200 bg-stone-50 px-5 py-4"
+          className="mt-7 rounded-2xl border border-slate-200 bg-white px-5 py-4"
         >
           <Text className="text-center text-lg font-semibold text-sky-600">
             Open Rider Profile
@@ -197,7 +201,7 @@ export default function DriverProfileScreen() {
 
   return (
     <ScrollView
-      className="flex-1 bg-white"
+      className="flex-1 bg-slate-50"
       contentContainerClassName="px-6 pb-28 pt-16"
     >
       <Text className="text-3xl font-black text-slate-900">Driver Profile</Text>
@@ -205,8 +209,8 @@ export default function DriverProfileScreen() {
         Profile details, verification status, and driving stats.
       </Text>
 
-      <View className="mt-6 rounded-2xl border border-stone-200 bg-stone-50 p-4">
-        <Text className="text-sm font-semibold text-slate-700">Identity</Text>
+      <View className="mt-6 rounded-2xl border border-slate-200 bg-white p-4">
+        <Text className="text-sm font-semibold text-slate-900">Identity</Text>
         <InfoRow
           label="Full Name"
           value={profile?.profiles?.full_name || "-"}
@@ -221,9 +225,7 @@ export default function DriverProfileScreen() {
       </View>
 
       <View className="mt-5 rounded-2xl border border-sky-200 bg-sky-50 p-4">
-        <Text className="text-sm font-semibold text-sky-700">
-          Verification
-        </Text>
+        <Text className="text-sm font-semibold text-sky-700">Verification</Text>
         <Text className="mt-2 text-2xl font-black text-slate-900">
           {summary?.status || "Unknown"}
         </Text>
@@ -239,7 +241,7 @@ export default function DriverProfileScreen() {
           </Text>
           <Pressable
             onPress={() => router.push("/driver-verification")}
-            className="mt-3 items-center rounded-xl bg-amber-500 px-4 py-3"
+            className="mt-3 items-center rounded-xl bg-slate-900 px-4 py-3"
           >
             <Text className="text-base font-semibold text-white">
               Please Verify
@@ -257,8 +259,8 @@ export default function DriverProfileScreen() {
         </View>
       )}
 
-      <View className="mt-5 rounded-2xl border border-stone-200 bg-stone-50 p-4">
-        <Text className="text-sm font-semibold text-slate-700">
+      <View className="mt-5 rounded-2xl border border-slate-200 bg-white p-4">
+        <Text className="text-sm font-semibold text-slate-900">
           Driver Stats
         </Text>
         <View className="mt-3 flex-row justify-between">
@@ -268,8 +270,8 @@ export default function DriverProfileScreen() {
         </View>
       </View>
 
-      <View className="mt-5 rounded-2xl border border-stone-200 bg-stone-50 p-4">
-        <Text className="text-sm font-semibold text-slate-700">
+      <View className="mt-5 rounded-2xl border border-slate-200 bg-white p-4">
+        <Text className="text-sm font-semibold text-slate-900">
           Driver Preferences
         </Text>
 
@@ -312,7 +314,7 @@ export default function DriverProfileScreen() {
           textAlignVertical="top"
           placeholder="Tell riders about your driving style"
           placeholderTextColor="#94a3b8"
-          className="min-h-28 rounded-xl border border-stone-300 bg-white px-4 py-3 text-base text-slate-900"
+          className="min-h-28 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-base text-slate-900"
         />
         <Text className="mt-2 text-right text-xs text-slate-500">
           {bio.length}/500
@@ -321,7 +323,7 @@ export default function DriverProfileScreen() {
         <Pressable
           onPress={() => void onSaveDriverProfile()}
           disabled={saving}
-          className="mt-4 items-center rounded-xl bg-sky-500 px-4 py-3"
+          className="mt-4 items-center rounded-xl bg-slate-900 px-4 py-3"
         >
           {saving ? (
             <ActivityIndicator color="#ffffff" />
@@ -359,7 +361,7 @@ type InfoRowProps = {
 
 function InfoRow({ label, value }: InfoRowProps) {
   return (
-    <View className="mt-3 flex-row items-center justify-between rounded-xl border border-stone-200 bg-white px-3 py-3">
+    <View className="mt-3 flex-row items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
       <Text className="text-sm text-slate-500">{label}</Text>
       <Text className="max-w-[65%] text-right text-sm font-semibold text-slate-800">
         {value}
@@ -390,7 +392,7 @@ type PreferenceRowProps = {
 
 function PreferenceRow({ label, value, onValueChange }: PreferenceRowProps) {
   return (
-    <View className="flex-row items-center justify-between rounded-xl border border-stone-200 bg-white px-3 py-3">
+    <View className="flex-row items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
       <Text className="mr-3 flex-1 text-sm font-medium text-slate-700">
         {label}
       </Text>
