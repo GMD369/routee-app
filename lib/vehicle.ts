@@ -20,7 +20,7 @@ export interface VehicleResponse {
 
 export async function getMyVehicles() {
   try {
-    const response = await http.get<VehicleResponse[]>("/me/vehicles");
+    const response = await http.get<VehicleResponse[]>("/vehicles/me/vehicles");
     return response.data;
   } catch (error) {
     if (error instanceof HttpError) {
@@ -28,6 +28,23 @@ export async function getMyVehicles() {
     }
 
     throw new HttpError("Unable to load vehicles", {
+      isNetworkError: true,
+    });
+  }
+}
+
+export async function getMyVehicle(vehicleId: string) {
+  try {
+    const response = await http.get<VehicleResponse>(
+      `/vehicles/me/vehicles/${vehicleId}`,
+    );
+    return response.data;
+  } catch (error) {
+    if (error instanceof HttpError) {
+      throw error;
+    }
+
+    throw new HttpError("Unable to load vehicle", {
       isNetworkError: true,
     });
   }

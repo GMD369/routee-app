@@ -1,20 +1,22 @@
 import { useFocusEffect } from "@react-navigation/native";
+import { router } from "expo-router";
 import { useCallback, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Linking,
-    ScrollView,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Linking,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import {
-    getApiErrorMessage,
-    getPrimaryRole,
-    loadSession,
-    UserRole,
+  getApiErrorMessage,
+  getPrimaryRole,
+  loadSession,
+  UserRole,
 } from "../../lib/auth";
+import { getMyDriverProfile, VerificationStatus } from "../../lib/driver";
 import { getMyVehicles, VehicleResponse } from "../../lib/vehicle";
 
 function formatVehicleTitle(vehicle: VehicleResponse) {
@@ -34,6 +36,8 @@ function formatVehicleMeta(vehicle: VehicleResponse) {
 
 export default function TripsTabScreen() {
   const [role, setRole] = useState<UserRole | null>(null);
+  const [verificationStatus, setVerificationStatus] =
+    useState<VerificationStatus | null>(null);
   const [vehicles, setVehicles] = useState<VehicleResponse[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -45,6 +49,15 @@ export default function TripsTabScreen() {
       setRole(currentRole);
 
       if (currentRole !== "driver") {
+        setVerificationStatus(null);
+        setVehicles([]);
+        return;
+      }
+
+      const driverProfile = await getMyDriverProfile();
+      setVerificationStatus(driverProfile.verification_status);
+
+      if (driverProfile.verification_status !== "verified") {
         setVehicles([]);
         return;
       }
@@ -65,6 +78,7 @@ export default function TripsTabScreen() {
   );
 
   const isDriver = role === "driver";
+  const isVerifiedDriver = verificationStatus === "verified";
 
   return (
     <ScrollView
@@ -84,6 +98,25 @@ export default function TripsTabScreen() {
             account.
           </Text>
         </View>
+      ) : !isVerifiedDriver ? (
+        <View className="mt-7 rounded-2xl border border-amber-200 bg-amber-50 p-5">
+          <Text className="text-lg font-bold text-slate-900">
+            Please verify your account
+          </Text>
+          <Text className="mt-2 text-sm leading-6 text-slate-600">
+            Your driver account is not verified yet. Complete verification to
+            access the Vehicles tab.
+          </Text>
+
+          <TouchableOpacity
+            className="mt-5 rounded-2xl bg-slate-900 px-5 py-4"
+            onPress={() => router.push("/driver-verification")}
+          >
+            <Text className="text-center text-base font-semibold text-white">
+              Go to verification
+            </Text>
+          </TouchableOpacity>
+        </View>
       ) : (
         <View className="mt-7 gap-3">
           {loading ? (
@@ -95,9 +128,15 @@ export default function TripsTabScreen() {
             </View>
           ) : vehicles.length > 0 ? (
             vehicles.map((vehicle) => (
-              <View
+              <TouchableOpacity
                 key={vehicle.id}
                 className="rounded-2xl border border-stone-200 bg-stone-50 p-5"
+                onPress={() =>
+                  router.push({
+                    pathname: "/vehicle/[vehicleId]",
+                    params: { vehicleId: vehicle.id },
+                  })
+                }
               >
                 <View className="flex-row items-start justify-between gap-4">
                   <View className="flex-1">
@@ -158,7 +197,7 @@ export default function TripsTabScreen() {
                     </TouchableOpacity>
                   ) : null}
                 </View>
-              </View>
+              </TouchableOpacity>
             ))
           ) : (
             <View className="rounded-2xl border border-stone-200 bg-stone-50 p-5">
