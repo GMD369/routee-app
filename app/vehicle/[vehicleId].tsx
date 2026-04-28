@@ -167,6 +167,20 @@ export default function VehicleDetailScreen() {
               </View>
             </View>
 
+            <TouchableOpacity
+              className="mt-4 rounded-2xl bg-slate-900 px-5 py-4"
+              onPress={() =>
+                router.push({
+                  pathname: "/vehicle/edit/[vehicleId]",
+                  params: { vehicleId: vehicle.id },
+                })
+              }
+            >
+              <Text className="text-center text-base font-semibold text-white">
+                Edit vehicle
+              </Text>
+            </TouchableOpacity>
+
             <View className="mt-4 flex-row flex-wrap gap-2">
               {vehicle.is_primary ? (
                 <View className="rounded-full bg-slate-900 px-3 py-1.5">
