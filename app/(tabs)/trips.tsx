@@ -118,7 +118,27 @@ export default function TripsTabScreen() {
           </TouchableOpacity>
         </View>
       ) : (
-        <View className="mt-7 gap-3">
+        <View className="mt-7 gap-4">
+          <View className="flex-row items-center justify-between gap-3">
+            <View className="flex-1">
+              <Text className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">
+                Registered fleet
+              </Text>
+              <Text className="mt-1 text-base font-semibold text-slate-900">
+                {vehicles.length} vehicle{vehicles.length === 1 ? "" : "s"}
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              className="rounded-2xl bg-slate-900 px-4 py-3"
+              onPress={() => router.push("/vehicle/new")}
+            >
+              <Text className="text-sm font-semibold text-white">
+                + Add vehicle
+              </Text>
+            </TouchableOpacity>
+          </View>
+
           {loading ? (
             <View className="flex-row items-center gap-3 rounded-2xl border border-stone-200 bg-stone-50 p-5">
               <ActivityIndicator color="#0D0D0D" />
@@ -205,9 +225,18 @@ export default function TripsTabScreen() {
                 No vehicles yet
               </Text>
               <Text className="mt-2 text-sm leading-6 text-slate-500">
-                Once the backend creates vehicle records for this driver, they
-                will appear here automatically.
+                Add your first vehicle so riders can see it on your driver
+                profile.
               </Text>
+
+              <TouchableOpacity
+                className="mt-5 rounded-2xl bg-slate-900 px-5 py-4"
+                onPress={() => router.push("/vehicle/new")}
+              >
+                <Text className="text-center text-base font-semibold text-white">
+                  Add vehicle
+                </Text>
+              </TouchableOpacity>
             </View>
           )}
         </View>
