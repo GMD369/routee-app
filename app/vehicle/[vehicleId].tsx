@@ -16,7 +16,11 @@ import {
     loadSession,
 } from "../../lib/auth";
 import { getMyDriverProfile, VerificationStatus } from "../../lib/driver";
-import { getMyVehicle, VehicleResponse } from "../../lib/vehicle";
+import {
+    deleteVehicle,
+    getMyVehicle,
+    VehicleResponse,
+} from "../../lib/vehicle";
 
 function formatVehicleTitle(vehicle: VehicleResponse) {
   return `${vehicle.make} ${vehicle.model}`.trim();
@@ -53,6 +57,7 @@ export default function VehicleDetailScreen() {
     : params.vehicleId;
 
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
   const [role, setRole] = useState<"driver" | "rider" | null>(null);
   const [verificationStatus, setVerificationStatus] =
     useState<VerificationStatus | null>(null);
@@ -93,6 +98,48 @@ export default function VehicleDetailScreen() {
       setLoading(false);
     }
   }, [vehicleId]);
+
+  const handleDelete = useCallback(() => {
+    Alert.alert(
+      "Delete vehicle",
+      "Are you sure you want to delete this vehicle? This action cannot be undone.",
+      [
+        {
+          text: "Cancel",
+          onPress: () => {},
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          onPress: async () => {
+            if (!vehicle) return;
+
+            setDeleting(true);
+            try {
+              await deleteVehicle(vehicle.id);
+              Alert.alert(
+                "Vehicle deleted",
+                "Your vehicle has been successfully removed.",
+                [
+                  {
+                    text: "OK",
+                    onPress: () => {
+                      router.replace("/");
+                    },
+                  },
+                ],
+              );
+            } catch (error) {
+              Alert.alert("Delete error", getApiErrorMessage(error));
+            } finally {
+              setDeleting(false);
+            }
+          },
+          style: "destructive",
+        },
+      ],
+    );
+  }, [vehicle]);
 
   useFocusEffect(
     useCallback(() => {
@@ -175,10 +222,30 @@ export default function VehicleDetailScreen() {
                   params: { vehicleId: vehicle.id },
                 })
               }
+              disabled={deleting}
             >
               <Text className="text-center text-base font-semibold text-white">
                 Edit vehicle
               </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              className="mt-3 rounded-2xl border border-red-300 bg-red-50 px-5 py-4"
+              onPress={handleDelete}
+              disabled={deleting}
+            >
+              {deleting ? (
+                <View className="flex-row items-center justify-center gap-2">
+                  <ActivityIndicator color="#DC2626" size="small" />
+                  <Text className="text-center text-base font-semibold text-red-600">
+                    Deleting...
+                  </Text>
+                </View>
+              ) : (
+                <Text className="text-center text-base font-semibold text-red-600">
+                  Delete vehicle
+                </Text>
+              )}
             </TouchableOpacity>
 
             <View className="mt-4 flex-row flex-wrap gap-2">

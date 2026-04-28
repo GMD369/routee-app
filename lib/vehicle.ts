@@ -231,3 +231,39 @@ export async function updateVehicle(
 
   return data as VehicleResponse;
 }
+
+export async function deleteVehicle(vehicleId: string) {
+  const session = await loadSession();
+  if (!session?.access_token) {
+    throw new HttpError("Authentication required", { status: 401 });
+  }
+
+  const response = await fetch(
+    `${API_BASE_URL}/vehicles/me/vehicles/${vehicleId}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    },
+  );
+
+  if (!response.ok) {
+    let data: unknown;
+    try {
+      data = await response.json();
+    } catch {
+      data = null;
+    }
+
+    const detail =
+      typeof data === "object" &&
+      data &&
+      "detail" in data &&
+      typeof (data as { detail?: unknown }).detail === "string"
+        ? (data as { detail: string }).detail
+        : `Request failed with status ${response.status}`;
+
+    throw new HttpError(detail, { status: response.status, data });
+  }
+}
