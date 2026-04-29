@@ -15,7 +15,7 @@ import {
     loadSession,
 } from "../../lib/auth";
 import { getMyDriverProfile, VerificationStatus } from "../../lib/driver";
-import { getMyRide, RideResponse } from "../../lib/ride";
+import { cancelRide, getMyRide, RideResponse } from "../../lib/ride";
 
 function formatDateTime(value?: string | null) {
   if (!value) return "Not available";
@@ -44,6 +44,7 @@ export default function RideDetailScreen() {
     : params.rideId;
 
   const [loading, setLoading] = useState(true);
+  const [cancelling, setCancelling] = useState(false);
   const [role, setRole] = useState<"driver" | "rider" | null>(null);
   const [verificationStatus, setVerificationStatus] =
     useState<VerificationStatus | null>(null);
@@ -93,6 +94,33 @@ export default function RideDetailScreen() {
 
   const isDriver = role === "driver";
   const isVerifiedDriver = verificationStatus === "verified";
+  const canCancel = !!ride && !["completed", "cancelled"].includes(ride.status);
+
+  const handleCancelRide = useCallback(() => {
+    if (!ride || !canCancel) {
+      return;
+    }
+
+    Alert.alert("Cancel ride", "Are you sure you want to cancel this ride?", [
+      { text: "No", style: "cancel" },
+      {
+        text: "Yes, cancel",
+        style: "destructive",
+        onPress: async () => {
+          setCancelling(true);
+          try {
+            const updated = await cancelRide(ride.id);
+            setRide(updated);
+            Alert.alert("Ride cancelled", "Your ride is now cancelled.");
+          } catch (error) {
+            Alert.alert("Cancel error", getApiErrorMessage(error));
+          } finally {
+            setCancelling(false);
+          }
+        },
+      },
+    ]);
+  }, [ride, canCancel]);
 
   return (
     <ScrollView
@@ -143,6 +171,33 @@ export default function RideDetailScreen() {
             <Text className="mt-2 text-sm text-slate-500">
               Departure: {formatDateTime(ride.departure_time)}
             </Text>
+
+            {canCancel ? (
+              <TouchableOpacity
+                className="mt-4 rounded-2xl border border-red-300 bg-red-50 px-5 py-4"
+                onPress={handleCancelRide}
+                disabled={cancelling}
+              >
+                {cancelling ? (
+                  <View className="flex-row items-center justify-center gap-2">
+                    <ActivityIndicator color="#DC2626" size="small" />
+                    <Text className="text-center text-base font-semibold text-red-600">
+                      Cancelling...
+                    </Text>
+                  </View>
+                ) : (
+                  <Text className="text-center text-base font-semibold text-red-600">
+                    Cancel Ride
+                  </Text>
+                )}
+              </TouchableOpacity>
+            ) : (
+              <View className="mt-4 rounded-2xl border border-stone-200 bg-white px-4 py-3">
+                <Text className="text-sm text-slate-500">
+                  This ride cannot be cancelled in status: {ride.status}
+                </Text>
+              </View>
+            )}
           </View>
 
           <View className="gap-3">
