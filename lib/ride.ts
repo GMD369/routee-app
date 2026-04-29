@@ -86,3 +86,33 @@ export async function createRide(payload: RideCreateRequest) {
 
   return data as RideResponse;
 }
+
+export async function listMyRides() {
+  const session = await loadSession();
+  if (!session?.access_token) {
+    throw new HttpError("Authentication required", { status: 401 });
+  }
+
+  const response = await fetch(`${API_BASE_URL}/rides/me`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
+  });
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const detail =
+      typeof data === "object" &&
+      data &&
+      "detail" in data &&
+      typeof (data as { detail?: unknown }).detail === "string"
+        ? (data as { detail: string }).detail
+        : `Request failed with status ${response.status}`;
+
+    throw new HttpError(detail, { status: response.status, data });
+  }
+
+  return Array.isArray(data) ? (data as RideResponse[]) : [];
+}
