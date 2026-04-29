@@ -4,7 +4,6 @@ import { useCallback, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
-    Linking,
     ScrollView,
     Text,
     TouchableOpacity,
@@ -17,11 +16,7 @@ import {
     UserRole,
 } from "../../lib/auth";
 import { getMyDriverProfile, VerificationStatus } from "../../lib/driver";
-import {
-    getMyVehicles,
-    registrationUrlCandidates,
-    VehicleResponse,
-} from "../../lib/vehicle";
+import { getMyVehicles, VehicleResponse } from "../../lib/vehicle";
 
 function formatVehicleTitle(vehicle: VehicleResponse) {
   return `${vehicle.make} ${vehicle.model}`.trim();
@@ -215,45 +210,6 @@ export default function TripsTabScreen() {
                           : "—"}
                       </Text>
                     </View>
-                    {vehicle.registration_url ? (
-                      <TouchableOpacity
-                        onPress={async () => {
-                          try {
-                            const candidates = registrationUrlCandidates(
-                              vehicle.registration_url,
-                            );
-                            let opened = false;
-
-                            for (const url of candidates) {
-                              try {
-                                const can = await Linking.canOpenURL(url);
-                                if (can) {
-                                  await Linking.openURL(url);
-                                  opened = true;
-                                  break;
-                                }
-                              } catch {
-                                // ignore and try next
-                              }
-                            }
-
-                            if (!opened) {
-                              Alert.alert(
-                                "Cannot open registration",
-                                "The registration file has no valid public URL. Please contact support or copy the registration path.",
-                              );
-                            }
-                          } catch (err) {
-                            Alert.alert("Open registration error", String(err));
-                          }
-                        }}
-                        className="rounded-full bg-slate-900 px-3 py-1.5"
-                      >
-                        <Text className="text-xs font-semibold text-white">
-                          Open Registration
-                        </Text>
-                      </TouchableOpacity>
-                    ) : null}
                   </View>
                 </TouchableOpacity>
               ))

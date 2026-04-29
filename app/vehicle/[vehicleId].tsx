@@ -4,7 +4,6 @@ import { useCallback, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
-    Linking,
     ScrollView,
     Text,
     TouchableOpacity,
@@ -278,54 +277,6 @@ export default function VehicleDetailScreen() {
             <FieldRow label="Color" value={vehicle.color} />
             <FieldRow label="Seats" value={String(vehicle.total_seats)} />
             <FieldRow label="AC" value={vehicle.has_ac ? "Yes" : "No"} />
-          </View>
-
-          <View className="rounded-3xl border border-stone-200 bg-stone-50 p-5">
-            <Text className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">
-              Registration
-            </Text>
-            <Text className="mt-2 text-base font-semibold text-slate-900">
-              {vehicle.registration_url ? "Available" : "Not provided"}
-            </Text>
-            {vehicle.registration_url ? (
-              <TouchableOpacity
-                className="mt-4 rounded-2xl bg-slate-900 px-5 py-4"
-                onPress={async () => {
-                  try {
-                    const candidates = registrationUrlCandidates(
-                      vehicle.registration_url,
-                    );
-                    let opened = false;
-
-                    for (const url of candidates) {
-                      try {
-                        const can = await Linking.canOpenURL(url);
-                        if (can) {
-                          await Linking.openURL(url);
-                          opened = true;
-                          break;
-                        }
-                      } catch {
-                        // ignore and try next
-                      }
-                    }
-
-                    if (!opened) {
-                      Alert.alert(
-                        "Cannot open registration",
-                        "The registration file has no valid public URL. Please contact support or copy the registration path.",
-                      );
-                    }
-                  } catch (err) {
-                    Alert.alert("Open registration error", String(err));
-                  }
-                }}
-              >
-                <Text className="text-center text-base font-semibold text-white">
-                  Open registration
-                </Text>
-              </TouchableOpacity>
-            ) : null}
           </View>
         </View>
       ) : (
