@@ -1,34 +1,42 @@
 import DateTimePicker, {
-  DateTimePickerEvent,
+    DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle, Path, Rect } from "react-native-svg";
 import {
-  getApiErrorMessage,
-  registerDriver,
-  registerRider,
-  saveSession,
-  UserRole,
+    getApiErrorMessage,
+    registerDriver,
+    registerRider,
+    saveSession,
+    UserRole,
 } from "../../lib/auth";
 
 /* ── Icons ─────────────────────────────────────────────────── */
 
 function BackArrow() {
   return (
-    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#0D0D0D" strokeWidth={2.5} strokeLinecap="round">
+    <Svg
+      width={18}
+      height={18}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#0D0D0D"
+      strokeWidth={2.5}
+      strokeLinecap="round"
+    >
       <Path d="M19 12H5" />
       <Path d="M12 19l-7-7 7-7" />
     </Svg>
@@ -37,7 +45,15 @@ function BackArrow() {
 
 function UserIcon() {
   return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#9E9E9E" strokeWidth={2} strokeLinecap="round">
+    <Svg
+      width={16}
+      height={16}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#9E9E9E"
+      strokeWidth={2}
+      strokeLinecap="round"
+    >
       <Path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
       <Circle cx={12} cy={7} r={4} />
     </Svg>
@@ -46,7 +62,15 @@ function UserIcon() {
 
 function MailIcon() {
   return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#9E9E9E" strokeWidth={2} strokeLinecap="round">
+    <Svg
+      width={16}
+      height={16}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#9E9E9E"
+      strokeWidth={2}
+      strokeLinecap="round"
+    >
       <Rect x={2} y={4} width={20} height={16} rx={2} />
       <Path d="M22 7l-10 7L2 7" />
     </Svg>
@@ -55,7 +79,15 @@ function MailIcon() {
 
 function PhoneIcon() {
   return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#9E9E9E" strokeWidth={2} strokeLinecap="round">
+    <Svg
+      width={16}
+      height={16}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#9E9E9E"
+      strokeWidth={2}
+      strokeLinecap="round"
+    >
       <Path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.13h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.9a16 16 0 0 0 6.09 6.09l.86-.86a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.73 16.92z" />
     </Svg>
   );
@@ -63,7 +95,15 @@ function PhoneIcon() {
 
 function LockIcon() {
   return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#9E9E9E" strokeWidth={2} strokeLinecap="round">
+    <Svg
+      width={16}
+      height={16}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#9E9E9E"
+      strokeWidth={2}
+      strokeLinecap="round"
+    >
       <Rect x={3} y={11} width={18} height={11} rx={2} />
       <Path d="M7 11V7a5 5 0 0 1 10 0v4" />
     </Svg>
@@ -72,7 +112,15 @@ function LockIcon() {
 
 function CalendarIcon() {
   return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#9E9E9E" strokeWidth={2} strokeLinecap="round">
+    <Svg
+      width={16}
+      height={16}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#9E9E9E"
+      strokeWidth={2}
+      strokeLinecap="round"
+    >
       <Rect x={3} y={4} width={18} height={18} rx={2} />
       <Path d="M16 2v4M8 2v4M3 10h18" />
     </Svg>
@@ -81,7 +129,15 @@ function CalendarIcon() {
 
 function ChevronIcon() {
   return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#9E9E9E" strokeWidth={2} strokeLinecap="round">
+    <Svg
+      width={16}
+      height={16}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#9E9E9E"
+      strokeWidth={2}
+      strokeLinecap="round"
+    >
       <Path d="M6 9l6 6 6-6" />
     </Svg>
   );
@@ -108,7 +164,16 @@ export default function SignupScreen() {
   );
 
   async function onSubmit() {
-    const validationError = validateSignupInput({ role, fullName, phone, password, gender, dateOfBirth });
+    const normalizedPhone = normalizePhoneNumber(phone);
+    const validationError = validateSignupInput({
+      role,
+      fullName,
+      email,
+      phone: normalizedPhone,
+      password,
+      gender,
+      dateOfBirth,
+    });
 
     if (!email.trim()) {
       Alert.alert("Missing fields", "Email is required.");
@@ -128,7 +193,7 @@ export default function SignupScreen() {
           ? await registerRider({
               full_name: fullName.trim(),
               email: email.trim(),
-              phone: phone.trim(),
+              phone: normalizedPhone,
               password,
               gender: normalizedGender || undefined,
               date_of_birth: dateOfBirth.trim() || undefined,
@@ -136,7 +201,7 @@ export default function SignupScreen() {
           : await registerDriver({
               full_name: fullName.trim(),
               email: email.trim(),
-              phone: phone.trim(),
+              phone: normalizedPhone,
               password,
               gender: normalizedGender,
               date_of_birth: dateOfBirth.trim() || undefined,
@@ -184,7 +249,9 @@ export default function SignupScreen() {
             onPress={() => setRole("rider")}
             style={[s.roleBtn, role === "rider" && s.roleBtnActive]}
           >
-            <Text style={[s.roleBtnText, role === "rider" && s.roleBtnTextActive]}>
+            <Text
+              style={[s.roleBtnText, role === "rider" && s.roleBtnTextActive]}
+            >
               Rider
             </Text>
           </TouchableOpacity>
@@ -192,7 +259,9 @@ export default function SignupScreen() {
             onPress={() => setRole("driver")}
             style={[s.roleBtn, role === "driver" && s.roleBtnActive]}
           >
-            <Text style={[s.roleBtnText, role === "driver" && s.roleBtnTextActive]}>
+            <Text
+              style={[s.roleBtnText, role === "driver" && s.roleBtnTextActive]}
+            >
               Driver
             </Text>
           </TouchableOpacity>
@@ -257,10 +326,12 @@ export default function SignupScreen() {
         </TouchableOpacity>
 
         {/* Login link */}
-        <TouchableOpacity onPress={() => router.push("/login")} style={s.loginRow}>
+        <TouchableOpacity
+          onPress={() => router.push("/login")}
+          style={s.loginRow}
+        >
           <Text style={s.loginText}>
-            Already have an account?{" "}
-            <Text style={s.loginLink}>Sign In</Text>
+            Already have an account? <Text style={s.loginLink}>Sign In</Text>
           </Text>
         </TouchableOpacity>
       </ScrollView>
@@ -321,7 +392,15 @@ function InputField({
 const GENDER_OPTIONS = ["male", "female", "other"] as const;
 type GenderOption = (typeof GENDER_OPTIONS)[number];
 
-function GenderField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+function GenderField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const selected = GENDER_OPTIONS.find((o) => o === value) ?? "";
 
@@ -340,7 +419,13 @@ function GenderField({ label, value, onChange }: { label: string; value: string;
         <View style={s.fieldIcon}>
           <ChevronIcon />
         </View>
-        <Text style={[s.fieldInput, { paddingVertical: 14 }, !selected && { color: "#C2C2C2" }]}>
+        <Text
+          style={[
+            s.fieldInput,
+            { paddingVertical: 14 },
+            !selected && { color: "#C2C2C2" },
+          ]}
+        >
           {selected ? formatGenderLabel(selected) : "Select gender"}
         </Text>
       </TouchableOpacity>
@@ -353,7 +438,12 @@ function GenderField({ label, value, onChange }: { label: string; value: string;
               onPress={() => onSelect(opt)}
               style={[s.dropdownItem, selected === opt && s.dropdownItemActive]}
             >
-              <Text style={[s.dropdownText, selected === opt && s.dropdownTextActive]}>
+              <Text
+                style={[
+                  s.dropdownText,
+                  selected === opt && s.dropdownTextActive,
+                ]}
+              >
                 {formatGenderLabel(opt)}
               </Text>
             </TouchableOpacity>
@@ -366,7 +456,13 @@ function GenderField({ label, value, onChange }: { label: string; value: string;
 
 /* ── DateOfBirthField ────────────────────────────────────────── */
 
-function DateOfBirthField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function DateOfBirthField({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
   const [isPickerVisible, setPickerVisible] = useState(false);
 
   function onDateChange(event: DateTimePickerEvent, selectedDate?: Date) {
@@ -375,7 +471,9 @@ function DateOfBirthField({ value, onChange }: { value: string; onChange: (v: st
     onChange(formatDateForApi(selectedDate));
   }
 
-  const pickerValue = value ? new Date(`${value}T00:00:00`) : new Date(2000, 0, 1);
+  const pickerValue = value
+    ? new Date(`${value}T00:00:00`)
+    : new Date(2000, 0, 1);
 
   return (
     <View style={s.fieldWrap}>
@@ -387,7 +485,13 @@ function DateOfBirthField({ value, onChange }: { value: string; onChange: (v: st
         <View style={s.fieldIcon}>
           <CalendarIcon />
         </View>
-        <Text style={[s.fieldInput, { paddingVertical: 14 }, !value && { color: "#C2C2C2" }]}>
+        <Text
+          style={[
+            s.fieldInput,
+            { paddingVertical: 14 },
+            !value && { color: "#C2C2C2" },
+          ]}
+        >
           {value || "Select date"}
         </Text>
       </TouchableOpacity>
@@ -428,11 +532,21 @@ function formatGenderLabel(v: string) {
   return v.charAt(0).toUpperCase() + v.slice(1);
 }
 
+function normalizePhoneNumber(value: string) {
+  return value.trim().replace(/[\s-()]+/g, "");
+}
+
 function validateSignupInput(input: {
-  role: UserRole; fullName: string; phone: string;
-  password: string; gender: string; dateOfBirth: string;
+  role: UserRole;
+  fullName: string;
+  email: string;
+  phone: string;
+  password: string;
+  gender: string;
+  dateOfBirth: string;
 }) {
   const fullName = input.fullName.trim();
+  const email = input.email.trim();
   const phone = input.phone.trim();
   const password = input.password;
   const gender = input.gender.trim().toLowerCase();
@@ -440,6 +554,9 @@ function validateSignupInput(input: {
 
   if (!fullName || fullName.length < 2 || fullName.length > 100)
     return "Full name must be between 2 and 100 characters.";
+  if (!email) return "Email is required.";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+    return "Email address is invalid.";
   if (!phone) return "Phone is required.";
   if (!/^\+\d{10,15}$/.test(phone))
     return "Phone must be in E.164 format, e.g. +923001234567.";
@@ -463,16 +580,24 @@ const s = StyleSheet.create({
 
   /* Back */
   backBtn: {
-    width: 40, height: 40, borderRadius: 12,
-    borderWidth: 1.5, borderColor: "#EBEBEB",
-    alignItems: "center", justifyContent: "center",
-    marginTop: 16, marginBottom: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: "#EBEBEB",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 16,
+    marginBottom: 24,
   },
 
   /* Title */
   heading: {
-    fontSize: 30, fontWeight: "800",
-    letterSpacing: -0.8, color: "#0D0D0D", marginBottom: 4,
+    fontSize: 30,
+    fontWeight: "800",
+    letterSpacing: -0.8,
+    color: "#0D0D0D",
+    marginBottom: 4,
   },
   subheading: { fontSize: 14, color: "#9E9E9E", marginBottom: 28 },
 
@@ -480,12 +605,15 @@ const s = StyleSheet.create({
   roleToggle: {
     flexDirection: "row",
     backgroundColor: "#F5F5F5",
-    borderRadius: 14, padding: 4,
+    borderRadius: 14,
+    padding: 4,
     marginBottom: 24,
   },
   roleBtn: {
-    flex: 1, paddingVertical: 11,
-    borderRadius: 11, alignItems: "center",
+    flex: 1,
+    paddingVertical: 11,
+    borderRadius: 11,
+    alignItems: "center",
   },
   roleBtnActive: { backgroundColor: "#0D0D0D" },
   roleBtnText: { fontSize: 14, fontWeight: "600", color: "#9E9E9E" },
@@ -495,26 +623,37 @@ const s = StyleSheet.create({
   fields: { gap: 12, marginBottom: 24 },
   fieldWrap: { gap: 6 },
   fieldLabel: {
-    fontSize: 11, fontWeight: "600",
-    color: "#424242", letterSpacing: 0.5,
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#424242",
+    letterSpacing: 0.5,
   },
   fieldRow: {
-    flexDirection: "row", alignItems: "center",
-    borderWidth: 1.5, borderColor: "#EBEBEB",
-    borderRadius: 13, paddingHorizontal: 14,
-    backgroundColor: "#FAFAFA", minHeight: 50,
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1.5,
+    borderColor: "#EBEBEB",
+    borderRadius: 13,
+    paddingHorizontal: 14,
+    backgroundColor: "#FAFAFA",
+    minHeight: 50,
   },
   fieldRowActive: { borderColor: "#0D0D0D", backgroundColor: "#fff" },
   fieldIcon: { marginRight: 10 },
   fieldInput: {
-    flex: 1, fontSize: 14, color: "#0D0D0D",
+    flex: 1,
+    fontSize: 14,
+    color: "#0D0D0D",
   },
 
   /* Dropdown */
   dropdown: {
-    marginTop: 4, borderRadius: 13,
-    borderWidth: 1.5, borderColor: "#EBEBEB",
-    overflow: "hidden", backgroundColor: "#FAFAFA",
+    marginTop: 4,
+    borderRadius: 13,
+    borderWidth: 1.5,
+    borderColor: "#EBEBEB",
+    overflow: "hidden",
+    backgroundColor: "#FAFAFA",
   },
   dropdownItem: { paddingHorizontal: 14, paddingVertical: 13 },
   dropdownItemActive: { backgroundColor: "#0D0D0D" },
@@ -523,20 +662,30 @@ const s = StyleSheet.create({
 
   /* Date picker */
   pickerWrap: {
-    marginTop: 4, borderRadius: 13,
-    borderWidth: 1.5, borderColor: "#EBEBEB",
-    backgroundColor: "#FAFAFA", paddingHorizontal: 8, paddingVertical: 8,
+    marginTop: 4,
+    borderRadius: 13,
+    borderWidth: 1.5,
+    borderColor: "#EBEBEB",
+    backgroundColor: "#FAFAFA",
+    paddingHorizontal: 8,
+    paddingVertical: 8,
   },
   pickerDoneBtn: {
-    marginTop: 8, alignItems: "center",
-    backgroundColor: "#EBEBEB", borderRadius: 10, paddingVertical: 10,
+    marginTop: 8,
+    alignItems: "center",
+    backgroundColor: "#EBEBEB",
+    borderRadius: 10,
+    paddingVertical: 10,
   },
   pickerDoneText: { fontSize: 14, fontWeight: "600", color: "#0D0D0D" },
 
   /* Submit */
   btnPrimary: {
-    backgroundColor: "#0D0D0D", borderRadius: 16,
-    paddingVertical: 17, alignItems: "center", marginBottom: 20,
+    backgroundColor: "#0D0D0D",
+    borderRadius: 16,
+    paddingVertical: 17,
+    alignItems: "center",
+    marginBottom: 20,
   },
   btnPrimaryText: { fontSize: 16, fontWeight: "700", color: "#fff" },
 

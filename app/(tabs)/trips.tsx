@@ -2,22 +2,26 @@ import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
 import { useCallback, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Linking,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Linking,
+    ScrollView,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import {
-  getApiErrorMessage,
-  getPrimaryRole,
-  loadSession,
-  UserRole,
+    getApiErrorMessage,
+    getPrimaryRole,
+    loadSession,
+    UserRole,
 } from "../../lib/auth";
 import { getMyDriverProfile, VerificationStatus } from "../../lib/driver";
-import { getMyVehicles, VehicleResponse } from "../../lib/vehicle";
+import {
+    getMyVehicles,
+    registrationUrlCandidates,
+    VehicleResponse,
+} from "../../lib/vehicle";
 
 function formatVehicleTitle(vehicle: VehicleResponse) {
   return `${vehicle.make} ${vehicle.model}`.trim();
@@ -85,17 +89,19 @@ export default function TripsTabScreen() {
       className="flex-1 bg-white"
       contentContainerClassName="px-6 pb-28 pt-16"
     >
-      <Text className="text-3xl font-black text-slate-900">Vehicles</Text>
+      <Text className="text-3xl font-black text-slate-900">
+        Driver Dashboard
+      </Text>
       <Text className="mt-2 text-sm text-slate-500">
-        View and manage the vehicles registered to your driver account.
+        Post rides and manage your vehicles.
       </Text>
 
       {!isDriver ? (
         <View className="mt-7 rounded-2xl border border-stone-200 bg-stone-50 p-5">
           <Text className="text-lg font-bold text-slate-900">Driver only</Text>
           <Text className="mt-2 text-sm leading-6 text-slate-500">
-            Vehicle records are available after signing in with a driver
-            account.
+            Ride posting and vehicle management are available after signing in
+            with a driver account.
           </Text>
         </View>
       ) : !isVerifiedDriver ? (
@@ -105,7 +111,7 @@ export default function TripsTabScreen() {
           </Text>
           <Text className="mt-2 text-sm leading-6 text-slate-600">
             Your driver account is not verified yet. Complete verification to
-            access the Vehicles tab.
+            post rides and manage vehicles.
           </Text>
 
           <TouchableOpacity
@@ -118,127 +124,160 @@ export default function TripsTabScreen() {
           </TouchableOpacity>
         </View>
       ) : (
-        <View className="mt-7 gap-4">
-          <View className="flex-row items-center justify-between gap-3">
-            <View className="flex-1">
-              <Text className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">
-                Registered fleet
-              </Text>
-              <Text className="mt-1 text-base font-semibold text-slate-900">
-                {vehicles.length} vehicle{vehicles.length === 1 ? "" : "s"}
-              </Text>
-            </View>
-
-            <TouchableOpacity
-              className="rounded-2xl bg-slate-900 px-4 py-3"
-              onPress={() => router.push("/vehicle/new")}
-            >
-              <Text className="text-sm font-semibold text-white">
-                + Add vehicle
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {loading ? (
-            <View className="flex-row items-center gap-3 rounded-2xl border border-stone-200 bg-stone-50 p-5">
-              <ActivityIndicator color="#0D0D0D" />
-              <Text className="text-sm text-slate-500">
-                Loading vehicles...
-              </Text>
-            </View>
-          ) : vehicles.length > 0 ? (
-            vehicles.map((vehicle) => (
-              <TouchableOpacity
-                key={vehicle.id}
-                className="rounded-2xl border border-stone-200 bg-stone-50 p-5"
-                onPress={() =>
-                  router.push({
-                    pathname: "/vehicle/[vehicleId]",
-                    params: { vehicleId: vehicle.id },
-                  })
-                }
-              >
-                <View className="flex-row items-start justify-between gap-4">
-                  <View className="flex-1">
-                    <View className="flex-row flex-wrap items-center gap-2">
-                      <Text className="text-lg font-bold text-slate-900">
-                        {formatVehicleTitle(vehicle)}
-                      </Text>
-                      {vehicle.is_primary ? (
-                        <View className="rounded-full bg-slate-900 px-2 py-1">
-                          <Text className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white">
-                            Primary
-                          </Text>
-                        </View>
-                      ) : null}
-                      {!vehicle.is_active ? (
-                        <View className="rounded-full bg-rose-100 px-2 py-1">
-                          <Text className="text-[10px] font-semibold uppercase tracking-[0.18em] text-rose-700">
-                            Inactive
-                          </Text>
-                        </View>
-                      ) : null}
-                    </View>
-                    <Text className="mt-2 text-sm text-slate-500">
-                      {formatVehicleMeta(vehicle)}
-                    </Text>
-                  </View>
-                  <View className="rounded-2xl bg-white px-3 py-2">
-                    <Text className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                      Plate
-                    </Text>
-                    <Text className="mt-1 text-sm font-bold text-slate-900">
-                      {vehicle.plate_number}
-                    </Text>
-                  </View>
-                </View>
-
-                <View className="mt-4 flex-row flex-wrap gap-2">
-                  <View className="rounded-full bg-white px-3 py-1.5">
-                    <Text className="text-xs font-semibold text-slate-600">
-                      {vehicle.vehicle_type}
-                    </Text>
-                  </View>
-                  <View className="rounded-full bg-white px-3 py-1.5">
-                    <Text className="text-xs font-semibold text-slate-600">
-                      Driver ID {vehicle.driver_id.slice(0, 8)}
-                    </Text>
-                  </View>
-                  {vehicle.registration_url ? (
-                    <TouchableOpacity
-                      onPress={() =>
-                        void Linking.openURL(vehicle.registration_url || "")
-                      }
-                      className="rounded-full bg-slate-900 px-3 py-1.5"
-                    >
-                      <Text className="text-xs font-semibold text-white">
-                        Open Registration
-                      </Text>
-                    </TouchableOpacity>
-                  ) : null}
-                </View>
-              </TouchableOpacity>
-            ))
-          ) : (
-            <View className="rounded-2xl border border-stone-200 bg-stone-50 p-5">
-              <Text className="text-lg font-bold text-slate-900">
-                No vehicles yet
-              </Text>
-              <Text className="mt-2 text-sm leading-6 text-slate-500">
-                Add your first vehicle so riders can see it on your driver
-                profile.
-              </Text>
+        <View className="mt-7 gap-6">
+          {/* Vehicles Section */}
+          <View className="gap-4">
+            <View className="flex-row items-center justify-between gap-3">
+              <View className="flex-1">
+                <Text className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">
+                  Registered fleet
+                </Text>
+                <Text className="mt-1 text-base font-semibold text-slate-900">
+                  {vehicles.length} vehicle{vehicles.length === 1 ? "" : "s"}
+                </Text>
+              </View>
 
               <TouchableOpacity
-                className="mt-5 rounded-2xl bg-slate-900 px-5 py-4"
+                className="rounded-2xl bg-slate-900 px-4 py-3"
                 onPress={() => router.push("/vehicle/new")}
               >
-                <Text className="text-center text-base font-semibold text-white">
-                  Add vehicle
+                <Text className="text-sm font-semibold text-white">
+                  + Add vehicle
                 </Text>
               </TouchableOpacity>
             </View>
-          )}
+
+            {loading ? (
+              <View className="flex-row items-center gap-3 rounded-2xl border border-stone-200 bg-stone-50 p-5">
+                <ActivityIndicator color="#0D0D0D" />
+                <Text className="text-sm text-slate-500">
+                  Loading vehicles...
+                </Text>
+              </View>
+            ) : vehicles.length > 0 ? (
+              vehicles.map((vehicle) => (
+                <TouchableOpacity
+                  key={vehicle.id}
+                  className="rounded-2xl border border-stone-200 bg-stone-50 p-5"
+                  onPress={() =>
+                    router.push({
+                      pathname: "/vehicle/[vehicleId]",
+                      params: { vehicleId: vehicle.id },
+                    })
+                  }
+                >
+                  <View className="flex-row items-start justify-between gap-4">
+                    <View className="flex-1">
+                      <View className="flex-row flex-wrap items-center gap-2">
+                        <Text className="text-lg font-bold text-slate-900">
+                          {formatVehicleTitle(vehicle)}
+                        </Text>
+                        {vehicle.is_primary ? (
+                          <View className="rounded-full bg-slate-900 px-2 py-1">
+                            <Text className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white">
+                              Primary
+                            </Text>
+                          </View>
+                        ) : null}
+                        {!vehicle.is_active ? (
+                          <View className="rounded-full bg-rose-100 px-2 py-1">
+                            <Text className="text-[10px] font-semibold uppercase tracking-[0.18em] text-rose-700">
+                              Inactive
+                            </Text>
+                          </View>
+                        ) : null}
+                      </View>
+                      <Text className="mt-2 text-sm text-slate-500">
+                        {formatVehicleMeta(vehicle)}
+                      </Text>
+                    </View>
+                    <View className="rounded-2xl bg-white px-3 py-2">
+                      <Text className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                        Plate
+                      </Text>
+                      <Text className="mt-1 text-sm font-bold text-slate-900">
+                        {vehicle.plate_number}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View className="mt-4 flex-row flex-wrap gap-2">
+                    <View className="rounded-full bg-white px-3 py-1.5">
+                      <Text className="text-xs font-semibold text-slate-600">
+                        {vehicle.vehicle_type}
+                      </Text>
+                    </View>
+                    <View className="rounded-full bg-white px-3 py-1.5">
+                      <Text className="text-xs font-semibold text-slate-600">
+                        Driver ID{" "}
+                        {vehicle.driver_id
+                          ? vehicle.driver_id.slice(0, 8)
+                          : "—"}
+                      </Text>
+                    </View>
+                    {vehicle.registration_url ? (
+                      <TouchableOpacity
+                        onPress={async () => {
+                          try {
+                            const candidates = registrationUrlCandidates(
+                              vehicle.registration_url,
+                            );
+                            let opened = false;
+
+                            for (const url of candidates) {
+                              try {
+                                const can = await Linking.canOpenURL(url);
+                                if (can) {
+                                  await Linking.openURL(url);
+                                  opened = true;
+                                  break;
+                                }
+                              } catch {
+                                // ignore and try next
+                              }
+                            }
+
+                            if (!opened) {
+                              Alert.alert(
+                                "Cannot open registration",
+                                "The registration file has no valid public URL. Please contact support or copy the registration path.",
+                              );
+                            }
+                          } catch (err) {
+                            Alert.alert("Open registration error", String(err));
+                          }
+                        }}
+                        className="rounded-full bg-slate-900 px-3 py-1.5"
+                      >
+                        <Text className="text-xs font-semibold text-white">
+                          Open Registration
+                        </Text>
+                      </TouchableOpacity>
+                    ) : null}
+                  </View>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <View className="rounded-2xl border border-stone-200 bg-stone-50 p-5">
+                <Text className="text-lg font-bold text-slate-900">
+                  No vehicles yet
+                </Text>
+                <Text className="mt-2 text-sm leading-6 text-slate-500">
+                  Add your first vehicle so riders can see it on your driver
+                  profile.
+                </Text>
+
+                <TouchableOpacity
+                  className="mt-5 rounded-2xl bg-slate-900 px-5 py-4"
+                  onPress={() => router.push("/vehicle/new")}
+                >
+                  <Text className="text-center text-base font-semibold text-white">
+                    Add vehicle
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
         </View>
       )}
     </ScrollView>

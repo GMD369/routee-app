@@ -42,6 +42,27 @@ function VehicleIcon({ color }: { color: string }) {
   );
 }
 
+function RideIcon({ color }: { color: string }) {
+  return (
+    <Svg
+      width={22}
+      height={22}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <Path d="M17 18a2 2 0 1 0 4 0 2 2 0 0 0-4 0" />
+      <Path d="M3 18a2 2 0 1 0 4 0 2 2 0 0 0-4 0" />
+      <Path d="M1 4v6h14" />
+      <Path d="M15 10v6h2" />
+      <Path d="M17 4h2a2 2 0 0 1 2 2v4" />
+    </Svg>
+  );
+}
+
 function AccountIcon({ color }: { color: string }) {
   return (
     <Svg
@@ -101,6 +122,8 @@ export default function TabsLayout() {
           >
             {route.name === "trips" ? (
               <VehicleIcon color={color} />
+            ) : route.name === "rides" ? (
+              <RideIcon color={color} />
             ) : route.name === "account" ? (
               <AccountIcon color={color} />
             ) : (
@@ -112,6 +135,7 @@ export default function TabsLayout() {
     >
       <Tabs.Screen name="index" options={{ title: "Home" }} />
       <Tabs.Screen name="trips" options={{ title: "Vehicles" }} />
+      <Tabs.Screen name="rides" options={{ title: "Rides" }} />
       <Tabs.Screen name="account" options={{ href: null }} />
     </Tabs>
   );

@@ -267,3 +267,30 @@ export async function deleteVehicle(vehicleId: string) {
     throw new HttpError(detail, { status: response.status, data });
   }
 }
+
+/**
+ * Given a raw registration path or URL returned by the API, return an
+ * ordered list of candidate fully-qualified URLs to try opening. The backend
+ * sometimes returns a storage object key (e.g. "<bucket>/<object>") instead
+ * of a full public URL, so we try a few reasonable constructions.
+ */
+export function registrationUrlCandidates(raw?: string | null) {
+  if (!raw) return [];
+
+  // If it already looks like a full URL with scheme, return as-is.
+  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(raw)) {
+    return [raw];
+  }
+
+  const candidates: string[] = [];
+
+  // Try treating it as an absolute host (https://<raw>)
+  candidates.push(`https://${raw}`);
+
+  // Try relative to the API base, in case files are served from the same host
+  // e.g. https://<api-host>/4039.../registration-...jpeg
+  const base = API_BASE_URL.replace(/\/$/, "");
+  candidates.push(`${base}/${raw}`);
+
+  return candidates;
+}

@@ -38,6 +38,55 @@ async function parseResponseBody(response: Response) {
   return text.length > 0 ? text : null;
 }
 
+function formatErrorDetail(data: unknown, status: number) {
+  if (typeof data === "string") {
+    return data;
+  }
+
+  if (Array.isArray(data)) {
+    const messages = data
+      .map((item) => {
+        if (!item || typeof item !== "object") return null;
+
+        const detailItem = item as {
+          loc?: unknown;
+          msg?: unknown;
+        };
+
+        const location = Array.isArray(detailItem.loc)
+          ? detailItem.loc.join(".")
+          : null;
+        const message =
+          typeof detailItem.msg === "string" ? detailItem.msg : null;
+
+        if (location && message) {
+          return `${location}: ${message}`;
+        }
+
+        return message;
+      })
+      .filter((message): message is string => Boolean(message));
+
+    if (messages.length > 0) {
+      return messages.join("; ");
+    }
+  }
+
+  if (typeof data === "object" && data && "detail" in data) {
+    const detail = (data as { detail?: unknown }).detail;
+
+    if (typeof detail === "string") {
+      return detail;
+    }
+
+    if (Array.isArray(detail)) {
+      return formatErrorDetail(detail, status);
+    }
+  }
+
+  return `Request failed with status ${status}`;
+}
+
 async function request<T>(path: string, options: RequestOptions) {
   const timeoutMs = options.timeoutMs ?? 20000;
   const controller = new AbortController();
@@ -66,13 +115,7 @@ async function request<T>(path: string, options: RequestOptions) {
         void authExpiredHandler();
       }
 
-      const message =
-        typeof data === "object" &&
-        data &&
-        "detail" in data &&
-        typeof (data as { detail?: unknown }).detail === "string"
-          ? (data as { detail: string }).detail
-          : `Request failed with status ${response.status}`;
+      const message = formatErrorDetail(data, response.status);
 
       throw new HttpError(message, { status: response.status, data });
     }

@@ -1,22 +1,22 @@
 import DateTimePicker, {
-  DateTimePickerEvent,
+    DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Platform,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
+    ActivityIndicator,
+    Alert,
+    Platform,
+    Pressable,
+    ScrollView,
+    Text,
+    TextInput,
+    View,
 } from "react-native";
 import {
-  getApiErrorMessage,
-  registerDriver,
-  saveSession,
+    getApiErrorMessage,
+    registerDriver,
+    saveSession,
 } from "../../lib/auth";
 
 export default function DriverSignupScreen() {
@@ -29,10 +29,11 @@ export default function DriverSignupScreen() {
   const [loading, setLoading] = useState(false);
 
   async function onSubmit() {
+    const normalizedPhone = normalizePhoneNumber(phone);
     const validationError = validateDriverInput({
       fullName,
       email,
-      phone,
+      phone: normalizedPhone,
       password,
       gender,
       dateOfBirth,
@@ -50,7 +51,7 @@ export default function DriverSignupScreen() {
       const session = await registerDriver({
         full_name: fullName.trim(),
         email: email.trim(),
-        phone: phone.trim(),
+        phone: normalizedPhone,
         password,
         gender: normalizedGender,
         date_of_birth: dateOfBirth.trim() || undefined,
@@ -310,6 +311,10 @@ function formatGenderLabel(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
+function normalizePhoneNumber(value: string) {
+  return value.trim().replace(/[\s-()]+/g, "");
+}
+
 function validateDriverInput(input: {
   fullName: string;
   email: string;
@@ -331,6 +336,10 @@ function validateDriverInput(input: {
 
   if (!email) {
     return "Email is required.";
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return "Email address is invalid.";
   }
 
   if (!phone) {

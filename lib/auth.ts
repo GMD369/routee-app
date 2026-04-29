@@ -97,6 +97,39 @@ export function getPrimaryRole(session: AuthResponse | null): UserRole | null {
 
 export function getApiErrorMessage(error: unknown) {
   if (error instanceof HttpError) {
+    if (typeof error.data === "string") {
+      return error.data;
+    }
+
+    if (Array.isArray(error.data)) {
+      const messages = error.data
+        .map((item) => {
+          if (!item || typeof item !== "object") return null;
+
+          const detailItem = item as {
+            loc?: unknown;
+            msg?: unknown;
+          };
+
+          const location = Array.isArray(detailItem.loc)
+            ? detailItem.loc.join(".")
+            : null;
+          const message =
+            typeof detailItem.msg === "string" ? detailItem.msg : null;
+
+          if (location && message) {
+            return `${location}: ${message}`;
+          }
+
+          return message;
+        })
+        .filter((message): message is string => Boolean(message));
+
+      if (messages.length > 0) {
+        return messages.join("; ");
+      }
+    }
+
     const detail =
       typeof error.data === "object" &&
       error.data &&

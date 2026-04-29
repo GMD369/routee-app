@@ -1,0 +1,130 @@
+import { useFocusEffect } from "@react-navigation/native";
+import { router } from "expo-router";
+import { useCallback, useState } from "react";
+import {
+    ActivityIndicator,
+    Alert,
+    ScrollView,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import {
+    getApiErrorMessage,
+    getPrimaryRole,
+    loadSession,
+    UserRole,
+} from "../../lib/auth";
+import { getMyDriverProfile, VerificationStatus } from "../../lib/driver";
+
+export default function RidesTabScreen() {
+  const [role, setRole] = useState<UserRole | null>(null);
+  const [verificationStatus, setVerificationStatus] =
+    useState<VerificationStatus | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const hydrateScreen = useCallback(async () => {
+    setLoading(true);
+    try {
+      const session = await loadSession();
+      const currentRole = getPrimaryRole(session);
+      setRole(currentRole);
+
+      if (currentRole !== "driver") {
+        setVerificationStatus(null);
+        return;
+      }
+
+      const driverProfile = await getMyDriverProfile();
+      setVerificationStatus(driverProfile.verification_status);
+    } catch (error) {
+      Alert.alert("Load error", getApiErrorMessage(error));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      void hydrateScreen();
+    }, [hydrateScreen]),
+  );
+
+  const isDriver = role === "driver";
+  const isVerifiedDriver = verificationStatus === "verified";
+
+  return (
+    <ScrollView
+      className="flex-1 bg-white"
+      contentContainerClassName="px-6 pb-28 pt-16"
+    >
+      <Text className="text-3xl font-black text-slate-900">Rides</Text>
+      <Text className="mt-2 text-sm text-slate-500">
+        Share your commute with riders and earn money.
+      </Text>
+
+      {!isDriver ? (
+        <View className="mt-7 rounded-2xl border border-stone-200 bg-stone-50 p-5">
+          <Text className="text-lg font-bold text-slate-900">Driver only</Text>
+          <Text className="mt-2 text-sm leading-6 text-slate-500">
+            Ride posting is available after signing in with a driver account.
+          </Text>
+        </View>
+      ) : !isVerifiedDriver ? (
+        <View className="mt-7 rounded-2xl border border-amber-200 bg-amber-50 p-5">
+          <Text className="text-lg font-bold text-slate-900">
+            Please verify your account
+          </Text>
+          <Text className="mt-2 text-sm leading-6 text-slate-600">
+            Your driver account is not verified yet. Complete verification to
+            post rides.
+          </Text>
+
+          <TouchableOpacity
+            className="mt-5 rounded-2xl bg-slate-900 px-5 py-4"
+            onPress={() => router.push("/driver-verification")}
+          >
+            <Text className="text-center text-base font-semibold text-white">
+              Go to verification
+            </Text>
+          </TouchableOpacity>
+        </View>
+      ) : loading ? (
+        <View className="mt-7 flex-row items-center gap-3 rounded-2xl border border-stone-200 bg-stone-50 p-5">
+          <ActivityIndicator color="#0D0D0D" />
+          <Text className="text-sm text-slate-500">Loading...</Text>
+        </View>
+      ) : (
+        <View className="mt-7 gap-4">
+          <View className="rounded-3xl border border-stone-200 bg-stone-50 p-6">
+            <Text className="text-2xl font-black text-slate-900">
+              Ready to post a ride?
+            </Text>
+            <Text className="mt-3 text-sm leading-6 text-slate-600">
+              Share your commute route with other riders. Set your price,
+              vehicle details, and schedule preferences.
+            </Text>
+
+            <TouchableOpacity
+              className="mt-6 rounded-2xl bg-slate-900 px-5 py-4"
+              onPress={() => router.push("/ride/new")}
+            >
+              <Text className="text-center text-base font-semibold text-white">
+                + Post New Ride
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View className="rounded-2xl border border-blue-200 bg-blue-50 p-5">
+            <Text className="text-sm font-semibold text-blue-900">💡 Tips</Text>
+            <Text className="mt-2 text-sm leading-6 text-blue-800">
+              • Set competitive prices to attract more riders{"\n"}• Include
+              additional notes about your vehicle or route{"\n"}• Mark recurring
+              rides for regular commutes
+            </Text>
+          </View>
+        </View>
+      )}
+    </ScrollView>
+  );
+}

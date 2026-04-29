@@ -25,10 +25,11 @@ export default function RiderSignupScreen() {
   const [loading, setLoading] = useState(false);
 
   async function onSubmit() {
+    const normalizedPhone = normalizePhoneNumber(phone);
     const validationError = validateRiderInput({
       fullName,
       email,
-      phone,
+      phone: normalizedPhone,
       password,
       gender,
       dateOfBirth,
@@ -46,7 +47,7 @@ export default function RiderSignupScreen() {
       const session = await registerRider({
         full_name: fullName.trim(),
         email: email.trim(),
-        phone: phone.trim(),
+        phone: normalizedPhone,
         password,
         gender: normalizedGender || undefined,
         date_of_birth: dateOfBirth.trim() || undefined,
@@ -302,6 +303,10 @@ function formatGenderLabel(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
+function normalizePhoneNumber(value: string) {
+  return value.trim().replace(/[\s-()]+/g, "");
+}
+
 function validateRiderInput(input: {
   fullName: string;
   email: string;
@@ -323,6 +328,10 @@ function validateRiderInput(input: {
 
   if (!email) {
     return "Email is required.";
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return "Email address is invalid.";
   }
 
   if (!phone) {

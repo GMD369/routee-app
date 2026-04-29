@@ -37,14 +37,14 @@ function formatVehicleMeta(vehicle: VehicleResponse) {
   return parts.join(" • ");
 }
 
-function FieldRow({ label, value }: { label: string; value: string }) {
+function FieldRow({ label, value }: { label: string; value?: string | null }) {
   return (
     <View className="rounded-2xl border border-stone-200 bg-stone-50 p-4">
       <Text className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
         {label}
       </Text>
       <Text className="mt-2 text-base font-semibold text-slate-900">
-        {value}
+        {value || "Not available"}
       </Text>
     </View>
   );
@@ -290,9 +290,36 @@ export default function VehicleDetailScreen() {
             {vehicle.registration_url ? (
               <TouchableOpacity
                 className="mt-4 rounded-2xl bg-slate-900 px-5 py-4"
-                onPress={() =>
-                  void Linking.openURL(vehicle.registration_url || "")
-                }
+                onPress={async () => {
+                  try {
+                    const candidates = registrationUrlCandidates(
+                      vehicle.registration_url,
+                    );
+                    let opened = false;
+
+                    for (const url of candidates) {
+                      try {
+                        const can = await Linking.canOpenURL(url);
+                        if (can) {
+                          await Linking.openURL(url);
+                          opened = true;
+                          break;
+                        }
+                      } catch {
+                        // ignore and try next
+                      }
+                    }
+
+                    if (!opened) {
+                      Alert.alert(
+                        "Cannot open registration",
+                        "The registration file has no valid public URL. Please contact support or copy the registration path.",
+                      );
+                    }
+                  } catch (err) {
+                    Alert.alert("Open registration error", String(err));
+                  }
+                }}
               >
                 <Text className="text-center text-base font-semibold text-white">
                   Open registration
