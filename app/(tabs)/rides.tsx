@@ -156,9 +156,15 @@ export default function RidesTabScreen() {
               </View>
             ) : (
               rides.map((ride) => (
-                <View
+                <TouchableOpacity
                   key={ride.id}
                   className="rounded-2xl border border-stone-200 bg-stone-50 p-5"
+                  onPress={() =>
+                    router.push({
+                      pathname: "/ride/[rideId]",
+                      params: { rideId: ride.id },
+                    })
+                  }
                 >
                   <View className="flex-row items-start justify-between gap-3">
                     <View className="flex-1">
@@ -185,7 +191,7 @@ export default function RidesTabScreen() {
                       </Text>
                     </View>
                   </View>
-                </View>
+                </TouchableOpacity>
               ))
             )}
           </View>
