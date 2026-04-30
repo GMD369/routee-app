@@ -108,6 +108,15 @@ export default function AccountTabScreen() {
           </Text>
         </Link>
 
+        <Link
+          href="/saved-pairs/new"
+          className="rounded-2xl border border-slate-900 bg-slate-900 px-5 py-4"
+        >
+          <Text className="text-center text-lg font-semibold text-white">
+            Add Saved Location Pair
+          </Text>
+        </Link>
+
         <Pressable
           onPress={() => router.push("/")}
           className="rounded-2xl border border-stone-200 bg-stone-50 px-5 py-4"

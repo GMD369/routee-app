@@ -1,6 +1,8 @@
 import { Tabs } from "expo-router";
+import { useEffect, useState } from "react";
 import { View } from "react-native";
 import Svg, { Path } from "react-native-svg";
+import { getPrimaryRole, loadSession, UserRole } from "../../lib/auth";
 
 function HomeIcon({ color }: { color: string }) {
   return (
@@ -63,6 +65,24 @@ function RideIcon({ color }: { color: string }) {
   );
 }
 
+function LocationIcon({ color }: { color: string }) {
+  return (
+    <Svg
+      width={22}
+      height={22}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <Path d="M12 21s6-5.2 6-11a6 6 0 1 0-12 0c0 5.8 6 11 6 11z" />
+      <Path d="M12 10.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z" />
+    </Svg>
+  );
+}
+
 function AccountIcon({ color }: { color: string }) {
   return (
     <Svg
@@ -81,6 +101,37 @@ function AccountIcon({ color }: { color: string }) {
 }
 
 export default function TabsLayout() {
+  const [role, setRole] = useState<UserRole | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function initialize() {
+      try {
+        const session = await loadSession();
+        if (!cancelled) {
+          setRole(getPrimaryRole(session));
+        }
+      } catch {
+        if (!cancelled) {
+          setRole(null);
+        }
+      }
+    }
+
+    void initialize();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (role === null) {
+    return null;
+  }
+
+  const isDriver = role === "driver";
+
   return (
     <Tabs
       screenOptions={({ route }) => ({
@@ -124,6 +175,8 @@ export default function TabsLayout() {
               <VehicleIcon color={color} />
             ) : route.name === "rides" ? (
               <RideIcon color={color} />
+            ) : route.name === "location" ? (
+              <LocationIcon color={color} />
             ) : route.name === "account" ? (
               <AccountIcon color={color} />
             ) : (
@@ -134,8 +187,21 @@ export default function TabsLayout() {
       })}
     >
       <Tabs.Screen name="index" options={{ title: "Home" }} />
-      <Tabs.Screen name="trips" options={{ title: "Vehicles" }} />
-      <Tabs.Screen name="rides" options={{ title: "Rides" }} />
+      <Tabs.Screen
+        name="trips"
+        options={{ title: "Vehicles", href: isDriver ? undefined : null }}
+      />
+      <Tabs.Screen
+        name="rides"
+        options={{ title: "Rides", href: isDriver ? undefined : null }}
+      />
+      <Tabs.Screen
+        name="location"
+        options={{
+          title: "Location",
+          tabBarButton: isDriver ? () => null : undefined,
+        }}
+      />
       <Tabs.Screen name="account" options={{ href: null }} />
     </Tabs>
   );

@@ -11,10 +11,12 @@ export interface RiderPreferences {
 export interface SavedLocation {
   id: string;
   rider_id: string;
+  pair_id?: string | null;
   name: string;
   address?: string | null;
   latitude: number;
   longitude: number;
+  location_type?: "start" | "end" | string | null;
   is_default: boolean;
   created_at?: string | null;
 }
@@ -38,10 +40,47 @@ export interface SavedLocationInput {
   is_default?: boolean;
 }
 
-const PROFILE_ENDPOINTS = ["/riders/me"] as const;
-const LOCATION_CREATE_ENDPOINTS = ["/riders/me/locations"] as const;
-const LOCATION_UPDATE_BASE_ENDPOINTS = ["/riders/me/locations"] as const;
-const LOCATION_DELETE_BASE_ENDPOINTS = ["/riders/me/locations"] as const;
+export interface LocationPointInput {
+  name: string;
+  address?: string;
+  latitude: number;
+  longitude: number;
+}
+
+export interface SavedLocationPairCreateRequest {
+  start_location: LocationPointInput;
+  end_location: LocationPointInput;
+  is_default?: boolean;
+}
+
+export interface SavedLocationPairResponse {
+  pair_id: string;
+  rider_id: string;
+  is_default?: boolean;
+  start_location?: SavedLocation | null;
+  end_location?: SavedLocation | null;
+  saved_locations?: SavedLocation[];
+}
+
+const PROFILE_ENDPOINTS = ["/riders/me", "/me"] as const;
+// support both legacy and new backend routes
+// prefer explicit rider-scoped routes first (backend currently exposes these)
+const LOCATION_CREATE_ENDPOINTS = [
+  "/riders/me/locations",
+  "/me/locations",
+] as const;
+const LOCATION_LIST_ENDPOINTS = [
+  "/riders/me/locations",
+  "/me/locations",
+] as const;
+const LOCATION_UPDATE_BASE_ENDPOINTS = [
+  "/riders/me/locations",
+  "/me/locations",
+] as const;
+const LOCATION_DELETE_BASE_ENDPOINTS = [
+  "/riders/me/locations",
+  "/me/locations",
+] as const;
 
 const DEFAULT_PREFERENCES: RiderPreferences = {
   uni_student: false,
@@ -181,9 +220,10 @@ export async function getMyRiderProfile() {
   return normalizeProfile(await tryGet<RiderProfile>(PROFILE_ENDPOINTS));
 }
 
-export async function getMySavedLocations() {
-  const profile = await getMyRiderProfile();
-  return Array.isArray(profile.saved_locations) ? profile.saved_locations : [];
+export async function createSavedLocationPair(
+  input: SavedLocationPairCreateRequest,
+): Promise<SavedLocationPairResponse> {
+  return tryPost<SavedLocationPairResponse>(LOCATION_CREATE_ENDPOINTS, input);
 }
 
 export async function updateRiderPreferences(preferences: RiderPreferences) {
@@ -264,4 +304,50 @@ export async function deleteSavedLocation(locationId: string) {
   );
 
   await tryDelete(deletePaths);
+}
+
+export async function deleteSavedLocationPair(pairId: string) {
+  const id = pairId.trim();
+  if (!id) {
+    throw new Error("Pair ID is required.");
+  }
+
+  const deletePaths = LOCATION_DELETE_BASE_ENDPOINTS.map(
+    (basePath) => `${basePath}/${id}`,
+  );
+
+  await tryDelete(deletePaths);
+}
+
+export async function listSavedLocations(): Promise<
+  SavedLocationPairResponse[]
+> {
+  const response = await tryGet<SavedLocationPairResponse[]>(
+    LOCATION_LIST_ENDPOINTS,
+  );
+  return response.filter(
+    (pair) => Boolean(pair.start_location) && Boolean(pair.end_location),
+  );
+}
+
+export async function createSavedLocation(
+  input: SavedLocationInput,
+): Promise<SavedLocation> {
+  return tryPost<SavedLocation>(LOCATION_CREATE_ENDPOINTS, input);
+}
+
+export async function getSavedLocationById(
+  locationId: string,
+): Promise<SavedLocation | null> {
+  const pairs = await tryGet<SavedLocationPairResponse[]>(
+    LOCATION_LIST_ENDPOINTS,
+  );
+  for (const pair of pairs) {
+    const locations = pair.saved_locations ?? [];
+    const found = locations.find((location) => location.id === locationId);
+    if (found) {
+      return found;
+    }
+  }
+  return null;
 }
