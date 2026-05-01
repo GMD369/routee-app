@@ -1,7 +1,7 @@
+import { useFocusEffect } from "@react-navigation/native";
 import * as DocumentPicker from "expo-document-picker";
 import { router } from "expo-router";
-import * as SecureStore from "expo-secure-store";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle, Path } from "react-native-svg";
 import { clearSession, getApiErrorMessage, loadSession } from "../lib/auth";
+import { API_BASE_URL } from "../lib/config";
 import {
     getMyRiderProfile,
     RiderPreferences,
@@ -22,8 +23,6 @@ import {
     updateRiderPreferences,
     uploadRiderAvatar,
 } from "../lib/rider";
-
-const AVATAR_CACHE_KEY = "musafee.rider.avatar_url";
 
 /* ── Icons ──────────────────────────────────────────────────── */
 
@@ -156,9 +155,8 @@ export default function RiderProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [savingPrefs, setSavingPrefs] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [avatarError, setAvatarError] = useState<string | null>(null);
-
   const [profile, setProfile] = useState<RiderProfile | null>(null);
+  const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
   const [preferences, setPreferences] = useState<RiderPreferences>({
     uni_student: false,
     corporate_employee: false,
@@ -176,12 +174,8 @@ export default function RiderProfileScreen() {
     };
   }, [profile]);
 
-  useEffect(() => {
-    void initialize();
-  }, []);
-
-  async function initialize() {
-    setLoading(true);
+  const initialize = useCallback(async (showFullLoader = false) => {
+    if (showFullLoader) setLoading(true);
     try {
       const existingSession = await loadSession();
       if (!existingSession) {
@@ -197,74 +191,83 @@ export default function RiderProfileScreen() {
       setSessionChecked(true);
       setLoading(false);
     }
-  }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      // First visit: show full loader. Return visits: refresh silently in background.
+      void initialize(!sessionChecked);
+    }, [initialize, sessionChecked]),
+  );
 
   async function fetchProfile() {
     const riderProfile = await getMyRiderProfile();
-    const cachedAvatarUrl = await SecureStore.getItemAsync(AVATAR_CACHE_KEY);
-    const mergedProfile = {
-      ...riderProfile,
-      avatar_url: riderProfile.avatar_url ?? cachedAvatarUrl ?? null,
-    };
-
-    setProfile(mergedProfile);
+    setProfile((prev) => {
+      if (prev?.avatar_url !== riderProfile.avatar_url) setAvatarLoadFailed(false);
+      return riderProfile;
+    });
     setPreferences(riderProfile.preferences);
-
-    if (mergedProfile.avatar_url) {
-      await SecureStore.setItemAsync(
-        AVATAR_CACHE_KEY,
-        mergedProfile.avatar_url,
-      );
-    }
   }
 
   async function pickAvatar() {
     if (uploadingAvatar) return;
-
     try {
-      setAvatarError(null);
       const result = await DocumentPicker.getDocumentAsync({
         type: ["image/jpeg", "image/png", "image/webp"],
         copyToCacheDirectory: true,
         multiple: false,
       });
-
-      if (result.canceled) {
-        return;
-      }
-
+      if (result.canceled) return;
       const asset = result.assets[0];
       if (!asset?.uri) {
         Alert.alert("Selection failed", "Could not read the selected image.");
         return;
       }
-
       setUploadingAvatar(true);
       const uploaded = await uploadRiderAvatar({
         uri: asset.uri,
         name: asset.name || "avatar.jpg",
         type: asset.mimeType || "image/jpeg",
       });
-
+      setAvatarLoadFailed(false);
       setProfile((current) =>
         current
-          ? {
-              ...current,
-              avatar_url: uploaded.avatar_url ?? current.avatar_url,
-            }
+          ? { ...current, avatar_url: uploaded.avatar_url ?? current.avatar_url }
           : current,
       );
-      if (uploaded.avatar_url) {
-        await SecureStore.setItemAsync(AVATAR_CACHE_KEY, uploaded.avatar_url);
-      }
       Alert.alert("Saved", "Profile photo updated.");
     } catch (error) {
-      const message = getApiErrorMessage(error);
-      setAvatarError(message);
-      Alert.alert("Upload failed", message);
+      Alert.alert("Upload failed", getApiErrorMessage(error));
     } finally {
       setUploadingAvatar(false);
     }
+  }
+
+  function resolveAvatarUri(avatarUrl?: string | null): string | undefined {
+    if (!avatarUrl) return undefined;
+    const cleanBase = API_BASE_URL.replace(/\/$/, "");
+
+    // Already served through our proxy — use as-is
+    if (avatarUrl.startsWith(cleanBase)) return avatarUrl;
+
+    if (avatarUrl.startsWith("http")) {
+      // Supabase storage URL pattern:
+      // https://*.supabase.co/storage/v1/object/(public|authenticated)/{bucket}/{file_path}
+      // Extract only the {file_path} part so we send a clean path to the proxy
+      // and the backend downloads it from AVATARS_BUCKET with no encoding issues.
+      const match = avatarUrl.match(
+        /\/object\/(?:public|authenticated)\/[^/]+\/(.+)$/,
+      );
+      if (match) {
+        return `${cleanBase}/storage/files/${match[1]}`;
+      }
+      // Non-Supabase public URL — use directly
+      return avatarUrl;
+    }
+
+    // Already a relative storage path e.g. "user_id/avatar.jpg"
+    const cleanPath = avatarUrl.startsWith("/") ? avatarUrl.slice(1) : avatarUrl;
+    return `${cleanBase}/storage/files/${cleanPath}`;
   }
 
   function setPreferenceFlag<K extends keyof RiderPreferences>(
@@ -289,7 +292,6 @@ export default function RiderProfileScreen() {
 
   async function onLogout() {
     await clearSession();
-    await SecureStore.deleteItemAsync(AVATAR_CACHE_KEY);
     setIsLoggedIn(false);
     setProfile(null);
     router.replace("/login");
@@ -375,10 +377,17 @@ export default function RiderProfileScreen() {
                 onPress={() => void pickAvatar()}
                 activeOpacity={0.85}
               >
-                {profile?.avatar_url ? (
+                {(profile?.avatar_url ?? profile?.profiles?.avatar_url) &&
+                !avatarLoadFailed ? (
                   <Image
-                    source={{ uri: profile.avatar_url }}
+                    key={profile?.avatar_url ?? profile?.profiles?.avatar_url}
+                    source={{
+                      uri: resolveAvatarUri(
+                        profile?.avatar_url ?? profile?.profiles?.avatar_url,
+                      ),
+                    }}
                     style={s.avatarImage}
+                    onError={() => setAvatarLoadFailed(true)}
                   />
                 ) : (
                   <AvatarIcon />
@@ -392,8 +401,12 @@ export default function RiderProfileScreen() {
               <View style={s.onlineDot} />
             </View>
             <View style={s.profileInfo}>
-              <Text style={s.profileName}>Rider Account</Text>
-              <Text style={s.profileSub}>Musafee Member</Text>
+              <Text style={s.profileName}>
+                {profile?.profiles?.full_name || "Rider Account"}
+              </Text>
+              <Text style={s.profileSub}>
+                {profile?.profiles?.email || "Musafee Member"}
+              </Text>
               <View style={s.badgesRow}>
                 {stats && (
                   <View style={s.ratingBadge}>
@@ -401,12 +414,11 @@ export default function RiderProfileScreen() {
                   </View>
                 )}
                 <View style={s.verifiedBadge}>
-                  <Text style={s.verifiedBadgeText}>Verified ✓</Text>
+                  <Text style={s.verifiedBadgeText}>
+                    {profile?.is_active ? "Active ✓" : "Inactive"}
+                  </Text>
                 </View>
               </View>
-              {avatarError ? (
-                <Text style={s.avatarError}>{avatarError}</Text>
-              ) : null}
             </View>
           </View>
         </SafeAreaView>
@@ -618,12 +630,6 @@ const s = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     marginTop: 10,
-  },
-  avatarError: {
-    marginTop: 10,
-    color: "#FCA5A5",
-    fontSize: 12,
-    lineHeight: 17,
   },
   ratingBadge: {
     backgroundColor: "rgba(255,255,255,0.1)",

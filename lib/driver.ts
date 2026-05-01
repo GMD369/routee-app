@@ -44,6 +44,7 @@ export interface VerificationSubmitResponse {
 export interface DriverProfile {
   id: string;
   profile_id: string;
+  avatar_url?: string | null;
   cnic_number?: string | null;
   license_number?: string | null;
   verification_status: VerificationStatus;
@@ -61,10 +62,12 @@ export interface DriverProfile {
     phone?: string;
     gender?: string;
     date_of_birth?: string;
+    avatar_url?: string | null;
   };
 }
 
 const DRIVER_PROFILE_ENDPOINTS = ["/drivers/me"] as const;
+const DRIVER_AVATAR_ENDPOINTS = ["/drivers/me/avatar"] as const;
 
 const DEFAULT_PREFERENCES: DriverPreferences = {
   music: false,
@@ -176,6 +179,60 @@ export async function updateMyDriverProfile(payload: DriverUpdateRequest) {
   } catch {
     return normalized;
   }
+}
+
+export async function uploadDriverAvatar(file: {
+  uri: string;
+  name: string;
+  type: string;
+}): Promise<{ avatar_url?: string | null }> {
+  const session = await loadSession();
+  if (!session?.access_token) {
+    throw new HttpError("Authentication required", { status: 401 });
+  }
+
+  const formData = new FormData();
+  formData.append("avatar", {
+    uri: file.uri,
+    name: file.name,
+    type: file.type,
+  } as never);
+
+  let lastError: HttpError | null = null;
+
+  for (const path of DRIVER_AVATAR_ENDPOINTS) {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${session.access_token}` },
+      body: formData,
+    });
+
+    const data = await response.json().catch(() => null);
+
+    if (response.ok) {
+      return data as { avatar_url?: string | null };
+    }
+
+    const detail =
+      typeof data === "object" &&
+      data &&
+      "detail" in data &&
+      typeof (data as { detail?: unknown }).detail === "string"
+        ? (data as { detail: string }).detail
+        : `Request failed with status ${response.status}`;
+
+    const error = new HttpError(detail, { status: response.status, data });
+    if (response.status === 404) {
+      lastError = error;
+      continue;
+    }
+    throw error;
+  }
+
+  throw (
+    lastError ||
+    new HttpError("Avatar upload endpoint not found", { status: 404 })
+  );
 }
 
 function appendUploadFile(

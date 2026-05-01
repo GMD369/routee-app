@@ -33,6 +33,13 @@ export interface RiderProfile {
   rating_count: number;
   total_rides_taken: number;
   is_active: boolean;
+  profiles?: {
+    full_name?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    gender?: string | null;
+    avatar_url?: string | null;
+  };
 }
 
 export interface LocationPointInput {

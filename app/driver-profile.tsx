@@ -1,27 +1,56 @@
+import * as DocumentPicker from "expo-document-picker";
 import { router } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
+    Image,
     Pressable,
     ScrollView,
+    StyleSheet,
     Switch,
     Text,
     TextInput,
+    TouchableOpacity,
     View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Svg, { Circle, Path } from "react-native-svg";
+import { useFocusEffect } from "@react-navigation/native";
 import {
     clearSession,
     getApiErrorMessage,
     getPrimaryRole,
     loadSession,
 } from "../lib/auth";
+import { API_BASE_URL } from "../lib/config";
 import {
     DriverPreferences,
     DriverProfile,
     getMyDriverProfile,
     updateMyDriverProfile,
+    uploadDriverAvatar,
 } from "../lib/driver";
+
+function AvatarIcon() {
+  return (
+    <Svg width={38} height={38} viewBox="0 0 24 24" fill="none"
+      stroke="rgba(255,255,255,0.4)" strokeWidth={1.5} strokeLinecap="round">
+      <Circle cx={12} cy={8} r={4} />
+      <Path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+    </Svg>
+  );
+}
+
+function EditIcon() {
+  return (
+    <Svg width={15} height={15} viewBox="0 0 24 24" fill="none"
+      stroke="#fff" strokeWidth={2.5} strokeLinecap="round">
+      <Path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+      <Path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+    </Svg>
+  );
+}
 
 export default function DriverProfileScreen() {
   const [sessionChecked, setSessionChecked] = useState(false);
@@ -29,6 +58,8 @@ export default function DriverProfileScreen() {
   const [isDriver, setIsDriver] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
   const [profile, setProfile] = useState<DriverProfile | null>(null);
   const [bio, setBio] = useState("");
   const [preferences, setPreferences] = useState<DriverPreferences>({
@@ -39,12 +70,8 @@ export default function DriverProfileScreen() {
     talking: true,
   });
 
-  useEffect(() => {
-    void initialize();
-  }, []);
-
-  async function initialize() {
-    setLoading(true);
+  const initialize = useCallback(async (showFullLoader = false) => {
+    if (showFullLoader) setLoading(true);
     try {
       const existingSession = await loadSession();
       if (!existingSession) {
@@ -61,7 +88,12 @@ export default function DriverProfileScreen() {
 
       if (hasDriverRole) {
         const driverProfile = await getMyDriverProfile();
-        setProfile(driverProfile);
+        setProfile((prev) => {
+          if (prev?.avatar_url !== driverProfile.avatar_url) {
+            setAvatarLoadFailed(false);
+          }
+          return driverProfile;
+        });
         setBio(driverProfile.bio || "");
         setPreferences(
           driverProfile.preferences || {
@@ -78,6 +110,61 @@ export default function DriverProfileScreen() {
     } finally {
       setSessionChecked(true);
       setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      void initialize(!sessionChecked);
+    }, [initialize, sessionChecked]),
+  );
+
+  function resolveAvatarUri(avatarUrl?: string | null): string | undefined {
+    if (!avatarUrl) return undefined;
+    const cleanBase = API_BASE_URL.replace(/\/$/, "");
+    if (avatarUrl.startsWith(cleanBase)) return avatarUrl;
+    if (avatarUrl.startsWith("http")) {
+      const match = avatarUrl.match(
+        /\/object\/(?:public|authenticated)\/[^/]+\/(.+)$/,
+      );
+      if (match) return `${cleanBase}/storage/files/${match[1]}`;
+      return avatarUrl;
+    }
+    const cleanPath = avatarUrl.startsWith("/") ? avatarUrl.slice(1) : avatarUrl;
+    return `${cleanBase}/storage/files/${cleanPath}`;
+  }
+
+  async function pickAvatar() {
+    if (uploadingAvatar) return;
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ["image/jpeg", "image/png", "image/webp"],
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+      if (result.canceled) return;
+      const asset = result.assets[0];
+      if (!asset?.uri) {
+        Alert.alert("Selection failed", "Could not read the selected image.");
+        return;
+      }
+      setUploadingAvatar(true);
+      const uploaded = await uploadDriverAvatar({
+        uri: asset.uri,
+        name: asset.name || "avatar.jpg",
+        type: asset.mimeType || "image/jpeg",
+      });
+      setAvatarLoadFailed(false);
+      setProfile((current) =>
+        current
+          ? { ...current, avatar_url: uploaded.avatar_url ?? current.avatar_url }
+          : current,
+      );
+      Alert.alert("Saved", "Profile photo updated.");
+    } catch (error) {
+      Alert.alert("Upload failed", getApiErrorMessage(error));
+    } finally {
+      setUploadingAvatar(false);
     }
   }
 
@@ -199,15 +286,74 @@ export default function DriverProfileScreen() {
     );
   }
 
+  const avatarUrl = profile?.avatar_url ?? profile?.profiles?.avatar_url;
+
   return (
+    <View style={ds.root}>
+      {/* ── Dark header with avatar ── */}
+      <View style={ds.header}>
+        <SafeAreaView edges={["top"]}>
+          <View style={ds.headerTopRow}>
+            <Text style={ds.headerTitle}>Driver Profile</Text>
+            <TouchableOpacity style={ds.editBtn} onPress={() => void pickAvatar()}>
+              <EditIcon />
+            </TouchableOpacity>
+          </View>
+
+          <View style={ds.avatarRow}>
+            <View style={ds.avatarWrap}>
+              <TouchableOpacity
+                style={ds.avatar}
+                onPress={() => void pickAvatar()}
+                activeOpacity={0.85}
+              >
+                {avatarUrl && !avatarLoadFailed ? (
+                  <Image
+                    key={avatarUrl}
+                    source={{ uri: resolveAvatarUri(avatarUrl) }}
+                    style={ds.avatarImage}
+                    onError={() => setAvatarLoadFailed(true)}
+                  />
+                ) : (
+                  <AvatarIcon />
+                )}
+                {uploadingAvatar ? (
+                  <View style={ds.avatarOverlay}>
+                    <ActivityIndicator color="#fff" size="small" />
+                  </View>
+                ) : null}
+              </TouchableOpacity>
+              <View style={[ds.statusDot, isVerified ? ds.statusDotGreen : ds.statusDotAmber]} />
+            </View>
+
+            <View style={ds.profileInfo}>
+              <Text style={ds.profileName}>
+                {profile?.profiles?.full_name || "Driver Account"}
+              </Text>
+              <Text style={ds.profileSub}>
+                {profile?.profiles?.email || "Musafee Driver"}
+              </Text>
+              <View style={ds.badgesRow}>
+                <View style={ds.ratingBadge}>
+                  <Text style={ds.ratingBadgeText}>
+                    ⭐ {summary?.rating ?? "0.00"}
+                  </Text>
+                </View>
+                <View style={[ds.verifiedBadge, isVerified && ds.verifiedBadgeGreen]}>
+                  <Text style={[ds.verifiedBadgeText, isVerified && ds.verifiedBadgeTextGreen]}>
+                    {isVerified ? "Verified ✓" : summary?.status ?? "Pending"}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        </SafeAreaView>
+      </View>
+
     <ScrollView
       className="flex-1 bg-slate-50"
-      contentContainerClassName="px-6 pb-28 pt-16"
+      contentContainerClassName="px-6 pb-28 pt-5"
     >
-      <Text className="text-3xl font-black text-slate-900">Driver Profile</Text>
-      <Text className="mt-2 text-sm text-slate-500">
-        Profile details, verification status, and driving stats.
-      </Text>
 
       <View className="mt-6 rounded-2xl border border-slate-200 bg-white p-4">
         <Text className="text-sm font-semibold text-slate-900">Identity</Text>
@@ -342,8 +488,65 @@ export default function DriverProfileScreen() {
         <Text className="text-base font-semibold text-rose-600">Logout</Text>
       </Pressable>
     </ScrollView>
+    </View>
   );
 }
+
+const ds = StyleSheet.create({
+  root: { flex: 1, backgroundColor: "#F8FAFC" },
+  header: { backgroundColor: "#0D0D0D", paddingHorizontal: 22, paddingBottom: 24 },
+  headerTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingTop: 16,
+    marginBottom: 22,
+  },
+  headerTitle: { color: "#fff", fontSize: 18, fontWeight: "700" },
+  editBtn: {
+    width: 40, height: 40, borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    alignItems: "center", justifyContent: "center",
+  },
+  avatarRow: { flexDirection: "row", alignItems: "center", gap: 16 },
+  avatarWrap: { position: "relative", flexShrink: 0 },
+  avatar: {
+    width: 72, height: 72, borderRadius: 36,
+    backgroundColor: "#2a2a2a",
+    borderWidth: 2.5, borderColor: "rgba(255,255,255,0.12)",
+    alignItems: "center", justifyContent: "center",
+    overflow: "hidden",
+  },
+  avatarImage: { width: "100%", height: "100%" },
+  avatarOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    alignItems: "center", justifyContent: "center",
+  },
+  statusDot: {
+    position: "absolute", bottom: 2, right: 2,
+    width: 18, height: 18, borderRadius: 9,
+    borderWidth: 2, borderColor: "#0D0D0D",
+  },
+  statusDotGreen: { backgroundColor: "#4ADE80" },
+  statusDotAmber: { backgroundColor: "#FCD34D" },
+  profileInfo: { flex: 1 },
+  profileName: { color: "#fff", fontSize: 18, fontWeight: "800", letterSpacing: -0.5, marginBottom: 3 },
+  profileSub: { color: "rgba(255,255,255,0.4)", fontSize: 12 },
+  badgesRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10 },
+  ratingBadge: {
+    backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 8,
+    paddingHorizontal: 10, paddingVertical: 4,
+  },
+  ratingBadgeText: { color: "#fff", fontSize: 12, fontWeight: "700" },
+  verifiedBadge: {
+    backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 8,
+    paddingHorizontal: 10, paddingVertical: 4,
+  },
+  verifiedBadgeGreen: { backgroundColor: "rgba(74,222,128,0.15)" },
+  verifiedBadgeText: { color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: "600" },
+  verifiedBadgeTextGreen: { color: "#4ADE80" },
+});
 
 function prettyStatus(value?: string) {
   if (!value) return "Pending";
