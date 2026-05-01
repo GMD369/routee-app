@@ -97,6 +97,7 @@ async function request<T>(path: string, options: RequestOptions) {
       method: options.method,
       headers: {
         "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "1",
         ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
       },
       body:

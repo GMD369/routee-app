@@ -75,12 +75,11 @@ export async function listRecommendedRides(pairId: string, topN = 5) {
   }
 
   const searchParams = new URLSearchParams({
-    pair_id: pairId,
     top_n: String(topN),
   });
 
   const response = await fetch(
-    `${API_BASE_URL}/recommendations/rides?${searchParams.toString()}`,
+    `${API_BASE_URL}/recommendations/rides/${pairId}?${searchParams.toString()}`,
     {
       method: "GET",
       headers: {

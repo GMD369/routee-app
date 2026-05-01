@@ -23,6 +23,12 @@ export interface SavedLocation {
   created_at?: string | null;
 }
 
+export interface SavedLocationPairSummary {
+  pair_id: string;
+  start_address?: string | null;
+  end_address?: string | null;
+}
+
 export interface RiderProfile {
   id: string;
   profile_id: string;
@@ -342,4 +348,11 @@ export async function listSavedLocations(): Promise<
   return response.filter(
     (pair) => Boolean(pair.start_location) && Boolean(pair.end_location),
   );
+}
+
+export async function listSavedLocationsSummary(): Promise<SavedLocationPairSummary[]> {
+  return tryGet<SavedLocationPairSummary[]>([
+    "/riders/me/locations/summary",
+    "/me/locations/summary",
+  ]);
 }
