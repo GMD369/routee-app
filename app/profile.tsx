@@ -1,29 +1,43 @@
+import * as DocumentPicker from "expo-document-picker";
 import { router } from "expo-router";
+import * as SecureStore from "expo-secure-store";
 import { useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Svg, { Circle, Path, Rect } from "react-native-svg";
+import Svg, { Circle, Path } from "react-native-svg";
 import { clearSession, getApiErrorMessage, loadSession } from "../lib/auth";
 import {
-  getMyRiderProfile,
-  RiderPreferences,
-  RiderProfile,
-  updateRiderPreferences,
+    getMyRiderProfile,
+    RiderPreferences,
+    RiderProfile,
+    updateRiderPreferences,
+    uploadRiderAvatar,
 } from "../lib/rider";
+
+const AVATAR_CACHE_KEY = "musafee.rider.avatar_url";
 
 /* ── Icons ──────────────────────────────────────────────────── */
 
 function EditIcon() {
   return (
-    <Svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2} strokeLinecap="round">
+    <Svg
+      width={17}
+      height={17}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#fff"
+      strokeWidth={2}
+      strokeLinecap="round"
+    >
       <Path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
       <Path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
     </Svg>
@@ -32,7 +46,15 @@ function EditIcon() {
 
 function AvatarIcon() {
   return (
-    <Svg width={38} height={38} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth={1.5} strokeLinecap="round">
+    <Svg
+      width={38}
+      height={38}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="rgba(255,255,255,0.4)"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+    >
       <Circle cx={12} cy={8} r={4} />
       <Path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
     </Svg>
@@ -41,7 +63,15 @@ function AvatarIcon() {
 
 function ChevronIcon() {
   return (
-    <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="#C2C2C2" strokeWidth={2.5} strokeLinecap="round">
+    <Svg
+      width={13}
+      height={13}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#C2C2C2"
+      strokeWidth={2.5}
+      strokeLinecap="round"
+    >
       <Path d="M9 18l6-6-6-6" />
     </Svg>
   );
@@ -49,7 +79,15 @@ function ChevronIcon() {
 
 function BackArrow() {
   return (
-    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.5} strokeLinecap="round">
+    <Svg
+      width={18}
+      height={18}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#fff"
+      strokeWidth={2.5}
+      strokeLinecap="round"
+    >
       <Path d="M19 12H5" />
       <Path d="M12 19l-7-7 7-7" />
     </Svg>
@@ -60,7 +98,11 @@ function BackArrow() {
 
 function Toggle({ value, onToggle }: { value: boolean; onToggle: () => void }) {
   return (
-    <TouchableOpacity onPress={onToggle} style={[s.toggle, value && s.toggleOn]} activeOpacity={0.8}>
+    <TouchableOpacity
+      onPress={onToggle}
+      style={[s.toggle, value && s.toggleOn]}
+      activeOpacity={0.8}
+    >
       <View style={[s.toggleThumb, value && s.toggleThumbOn]} />
     </TouchableOpacity>
   );
@@ -68,12 +110,42 @@ function Toggle({ value, onToggle }: { value: boolean; onToggle: () => void }) {
 
 /* ── Preference rows config ─────────────────────────────────── */
 
-const PREF_ROWS: { key: keyof RiderPreferences; icon: string; label: string; sub: string }[] = [
-  { key: "music_ok", icon: "🎵", label: "Music in Car", sub: "Allowed during rides" },
-  { key: "quiet_ride", icon: "💬", label: "Quiet Ride", sub: "Minimal conversation" },
-  { key: "female_only", icon: "🔒", label: "Female-only Matching", sub: "Match with female drivers" },
-  { key: "uni_student", icon: "🎓", label: "University Student", sub: "Student commute priority" },
-  { key: "corporate_employee", icon: "💼", label: "Corporate Employee", sub: "Priority matching" },
+const PREF_ROWS: {
+  key: keyof RiderPreferences;
+  icon: string;
+  label: string;
+  sub: string;
+}[] = [
+  {
+    key: "music_ok",
+    icon: "🎵",
+    label: "Music in Car",
+    sub: "Allowed during rides",
+  },
+  {
+    key: "quiet_ride",
+    icon: "💬",
+    label: "Quiet Ride",
+    sub: "Minimal conversation",
+  },
+  {
+    key: "female_only",
+    icon: "🔒",
+    label: "Female-only Matching",
+    sub: "Match with female drivers",
+  },
+  {
+    key: "uni_student",
+    icon: "🎓",
+    label: "University Student",
+    sub: "Student commute priority",
+  },
+  {
+    key: "corporate_employee",
+    icon: "💼",
+    label: "Corporate Employee",
+    sub: "Priority matching",
+  },
 ];
 
 /* ── Screen ─────────────────────────────────────────────────── */
@@ -83,6 +155,8 @@ export default function RiderProfileScreen() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
   const [savingPrefs, setSavingPrefs] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
 
   const [profile, setProfile] = useState<RiderProfile | null>(null);
   const [preferences, setPreferences] = useState<RiderPreferences>({
@@ -102,7 +176,9 @@ export default function RiderProfileScreen() {
     };
   }, [profile]);
 
-  useEffect(() => { void initialize(); }, []);
+  useEffect(() => {
+    void initialize();
+  }, []);
 
   async function initialize() {
     setLoading(true);
@@ -125,11 +201,76 @@ export default function RiderProfileScreen() {
 
   async function fetchProfile() {
     const riderProfile = await getMyRiderProfile();
-    setProfile(riderProfile);
+    const cachedAvatarUrl = await SecureStore.getItemAsync(AVATAR_CACHE_KEY);
+    const mergedProfile = {
+      ...riderProfile,
+      avatar_url: riderProfile.avatar_url ?? cachedAvatarUrl ?? null,
+    };
+
+    setProfile(mergedProfile);
     setPreferences(riderProfile.preferences);
+
+    if (mergedProfile.avatar_url) {
+      await SecureStore.setItemAsync(
+        AVATAR_CACHE_KEY,
+        mergedProfile.avatar_url,
+      );
+    }
   }
 
-  function setPreferenceFlag<K extends keyof RiderPreferences>(key: K, value: RiderPreferences[K]) {
+  async function pickAvatar() {
+    if (uploadingAvatar) return;
+
+    try {
+      setAvatarError(null);
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ["image/jpeg", "image/png", "image/webp"],
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+
+      if (result.canceled) {
+        return;
+      }
+
+      const asset = result.assets[0];
+      if (!asset?.uri) {
+        Alert.alert("Selection failed", "Could not read the selected image.");
+        return;
+      }
+
+      setUploadingAvatar(true);
+      const uploaded = await uploadRiderAvatar({
+        uri: asset.uri,
+        name: asset.name || "avatar.jpg",
+        type: asset.mimeType || "image/jpeg",
+      });
+
+      setProfile((current) =>
+        current
+          ? {
+              ...current,
+              avatar_url: uploaded.avatar_url ?? current.avatar_url,
+            }
+          : current,
+      );
+      if (uploaded.avatar_url) {
+        await SecureStore.setItemAsync(AVATAR_CACHE_KEY, uploaded.avatar_url);
+      }
+      Alert.alert("Saved", "Profile photo updated.");
+    } catch (error) {
+      const message = getApiErrorMessage(error);
+      setAvatarError(message);
+      Alert.alert("Upload failed", message);
+    } finally {
+      setUploadingAvatar(false);
+    }
+  }
+
+  function setPreferenceFlag<K extends keyof RiderPreferences>(
+    key: K,
+    value: RiderPreferences[K],
+  ) {
     setPreferences((current) => ({ ...current, [key]: value }));
   }
 
@@ -148,6 +289,7 @@ export default function RiderProfileScreen() {
 
   async function onLogout() {
     await clearSession();
+    await SecureStore.deleteItemAsync(AVATAR_CACHE_KEY);
     setIsLoggedIn(false);
     setProfile(null);
     router.replace("/login");
@@ -183,11 +325,19 @@ export default function RiderProfileScreen() {
         <ScrollView style={s.body} contentContainerStyle={s.bodyContent}>
           <View style={s.card}>
             <Text style={s.cardHeading}>Welcome to Musafee</Text>
-            <Text style={s.cardSubtitle}>Login to view and update your rider profile.</Text>
-            <TouchableOpacity style={[s.actionBtn, { marginTop: 20 }]} onPress={() => router.push("/login")}>
+            <Text style={s.cardSubtitle}>
+              Login to view and update your rider profile.
+            </Text>
+            <TouchableOpacity
+              style={[s.actionBtn, { marginTop: 20 }]}
+              onPress={() => router.push("/login")}
+            >
               <Text style={s.actionBtnText}>Sign In</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[s.outlineBtn, { marginTop: 12 }]} onPress={() => router.push("/signup")}>
+            <TouchableOpacity
+              style={[s.outlineBtn, { marginTop: 12 }]}
+              onPress={() => router.push("/signup")}
+            >
               <Text style={s.outlineBtnText}>Create Account</Text>
             </TouchableOpacity>
           </View>
@@ -209,7 +359,10 @@ export default function RiderProfileScreen() {
               <BackArrow />
             </TouchableOpacity>
             <Text style={s.headerTitle}>My Profile</Text>
-            <TouchableOpacity style={s.editBtn}>
+            <TouchableOpacity
+              style={s.editBtn}
+              onPress={() => void pickAvatar()}
+            >
               <EditIcon />
             </TouchableOpacity>
           </View>
@@ -217,9 +370,25 @@ export default function RiderProfileScreen() {
           {/* Avatar row */}
           <View style={s.avatarRow}>
             <View style={s.avatarWrap}>
-              <View style={s.avatar}>
-                <AvatarIcon />
-              </View>
+              <TouchableOpacity
+                style={s.avatar}
+                onPress={() => void pickAvatar()}
+                activeOpacity={0.85}
+              >
+                {profile?.avatar_url ? (
+                  <Image
+                    source={{ uri: profile.avatar_url }}
+                    style={s.avatarImage}
+                  />
+                ) : (
+                  <AvatarIcon />
+                )}
+                {uploadingAvatar ? (
+                  <View style={s.avatarOverlay}>
+                    <ActivityIndicator color="#fff" size="small" />
+                  </View>
+                ) : null}
+              </TouchableOpacity>
               <View style={s.onlineDot} />
             </View>
             <View style={s.profileInfo}>
@@ -235,14 +404,20 @@ export default function RiderProfileScreen() {
                   <Text style={s.verifiedBadgeText}>Verified ✓</Text>
                 </View>
               </View>
+              {avatarError ? (
+                <Text style={s.avatarError}>{avatarError}</Text>
+              ) : null}
             </View>
           </View>
         </SafeAreaView>
       </View>
 
       {/* Scrollable body */}
-      <ScrollView style={s.body} contentContainerStyle={s.bodyContent} showsVerticalScrollIndicator={false}>
-
+      <ScrollView
+        style={s.body}
+        contentContainerStyle={s.bodyContent}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Stats card */}
         {stats && (
           <View style={s.card}>
@@ -278,7 +453,9 @@ export default function RiderProfileScreen() {
               </View>
               <Toggle
                 value={preferences[row.key]}
-                onToggle={() => setPreferenceFlag(row.key, !preferences[row.key])}
+                onToggle={() =>
+                  setPreferenceFlag(row.key, !preferences[row.key])
+                }
               />
             </View>
           ))}
@@ -288,20 +465,41 @@ export default function RiderProfileScreen() {
             onPress={() => void onSavePreferences()}
             disabled={savingPrefs}
           >
-            {savingPrefs
-              ? <ActivityIndicator color="#fff" size="small" />
-              : <Text style={s.actionBtnText}>Save Preferences</Text>
-            }
+            {savingPrefs ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <Text style={s.actionBtnText}>Save Preferences</Text>
+            )}
           </TouchableOpacity>
         </View>
 
         {/* Settings card */}
         <View style={s.card}>
           {[
-            { icon: "🔔", label: "Notifications", chevron: true, onPress: () => {} },
-            { icon: "🔒", label: "Privacy & Security", chevron: true, onPress: () => {} },
-            { icon: "❓", label: "Help & Support", chevron: true, onPress: () => {} },
-            { icon: "🚪", label: "Sign Out", red: true, onPress: () => void onLogout() },
+            {
+              icon: "🔔",
+              label: "Notifications",
+              chevron: true,
+              onPress: () => {},
+            },
+            {
+              icon: "🔒",
+              label: "Privacy & Security",
+              chevron: true,
+              onPress: () => {},
+            },
+            {
+              icon: "❓",
+              label: "Help & Support",
+              chevron: true,
+              onPress: () => {},
+            },
+            {
+              icon: "🚪",
+              label: "Sign Out",
+              red: true,
+              onPress: () => void onLogout(),
+            },
           ].map((item, i) => (
             <TouchableOpacity
               key={item.label}
@@ -310,7 +508,9 @@ export default function RiderProfileScreen() {
               activeOpacity={0.7}
             >
               <Text style={s.settingsIcon}>{item.icon}</Text>
-              <Text style={[s.settingsLabel, item.red && s.settingsLabelRed]}>{item.label}</Text>
+              <Text style={[s.settingsLabel, item.red && s.settingsLabelRed]}>
+                {item.label}
+              </Text>
               {item.chevron && <ChevronIcon />}
             </TouchableOpacity>
           ))}
@@ -329,48 +529,114 @@ const s = StyleSheet.create({
 
   // Loading
   loadingScreen: {
-    flex: 1, backgroundColor: "#fff", alignItems: "center", justifyContent: "center",
+    flex: 1,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
   },
   loadingScreenText: { marginTop: 12, fontSize: 14, color: "#9E9E9E" },
 
   // Header
-  header: { backgroundColor: "#0D0D0D", paddingHorizontal: 22, paddingBottom: 24 },
-  headerTopRow: {
-    flexDirection: "row", alignItems: "center", paddingTop: 16, marginBottom: 22,
+  header: {
+    backgroundColor: "#0D0D0D",
+    paddingHorizontal: 22,
+    paddingBottom: 24,
   },
-  headerTitle: { flex: 1, color: "#fff", fontSize: 18, fontWeight: "700", textAlign: "center" },
+  headerTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingTop: 16,
+    marginBottom: 22,
+  },
+  headerTitle: {
+    flex: 1,
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "700",
+    textAlign: "center",
+  },
   backBtn: {
-    width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.1)",
-    alignItems: "center", justifyContent: "center",
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   editBtn: {
-    width: 40, height: 40, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.1)",
-    alignItems: "center", justifyContent: "center",
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   // Avatar
   avatarRow: { flexDirection: "row", alignItems: "center", gap: 16 },
   avatarWrap: { position: "relative", flexShrink: 0 },
   avatar: {
-    width: 72, height: 72, borderRadius: 36,
-    backgroundColor: "#2a2a2a", borderWidth: 2.5, borderColor: "rgba(255,255,255,0.12)",
-    alignItems: "center", justifyContent: "center",
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: "#2a2a2a",
+    borderWidth: 2.5,
+    borderColor: "rgba(255,255,255,0.12)",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  avatarImage: { width: "100%", height: "100%" },
+  avatarOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   onlineDot: {
-    position: "absolute", bottom: 2, right: 2,
-    width: 18, height: 18, borderRadius: 9,
-    backgroundColor: "#4ADE80", borderWidth: 2, borderColor: "#0D0D0D",
+    position: "absolute",
+    bottom: 2,
+    right: 2,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "#4ADE80",
+    borderWidth: 2,
+    borderColor: "#0D0D0D",
   },
   profileInfo: { flex: 1 },
-  profileName: { color: "#fff", fontSize: 20, fontWeight: "800", letterSpacing: -0.5, marginBottom: 3 },
+  profileName: {
+    color: "#fff",
+    fontSize: 20,
+    fontWeight: "800",
+    letterSpacing: -0.5,
+    marginBottom: 3,
+  },
   profileSub: { color: "rgba(255,255,255,0.4)", fontSize: 12 },
-  badgesRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10 },
+  badgesRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 10,
+  },
+  avatarError: {
+    marginTop: 10,
+    color: "#FCA5A5",
+    fontSize: 12,
+    lineHeight: 17,
+  },
   ratingBadge: {
-    backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
   },
   ratingBadgeText: { color: "#fff", fontSize: 13, fontWeight: "700" },
   verifiedBadge: {
-    backgroundColor: "rgba(74,222,128,0.15)", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4,
+    backgroundColor: "rgba(74,222,128,0.15)",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
   },
   verifiedBadgeText: { color: "#4ADE80", fontSize: 12, fontWeight: "600" },
 
@@ -380,26 +646,51 @@ const s = StyleSheet.create({
 
   // Card
   card: {
-    backgroundColor: "#fff", borderRadius: 18, padding: 16,
-    shadowColor: "#000", shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04, shadowRadius: 8, elevation: 2,
+    backgroundColor: "#fff",
+    borderRadius: 18,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   cardLabel: {
-    fontSize: 10, fontWeight: "700", color: "#9E9E9E",
-    letterSpacing: 1, textTransform: "uppercase", marginBottom: 14,
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#9E9E9E",
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    marginBottom: 14,
   },
-  cardHeading: { fontSize: 20, fontWeight: "800", color: "#0D0D0D", letterSpacing: -0.5, marginBottom: 6 },
+  cardHeading: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#0D0D0D",
+    letterSpacing: -0.5,
+    marginBottom: 6,
+  },
   cardSubtitle: { fontSize: 14, color: "#9E9E9E", lineHeight: 22 },
 
   // Stats
   statsRow: { flexDirection: "row", alignItems: "center" },
   statItem: { flex: 1, alignItems: "center" },
-  statVal: { fontSize: 22, fontWeight: "800", color: "#0D0D0D", letterSpacing: -0.5 },
+  statVal: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#0D0D0D",
+    letterSpacing: -0.5,
+  },
   statLbl: { fontSize: 11, color: "#9E9E9E", marginTop: 4 },
   statDivider: { width: 1, height: 36, backgroundColor: "#F0F0F0" },
 
   // Preferences
-  prefRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12 },
+  prefRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 12,
+  },
   prefRowBorder: { borderTopWidth: 1, borderTopColor: "#F5F5F5" },
   prefIcon: { fontSize: 18, width: 28, textAlign: "center" },
   prefBody: { flex: 1 },
@@ -408,19 +699,29 @@ const s = StyleSheet.create({
 
   // Toggle
   toggle: {
-    width: 40, height: 22, borderRadius: 11, backgroundColor: "#E0E0E0",
-    justifyContent: "center", paddingHorizontal: 3,
+    width: 40,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "#E0E0E0",
+    justifyContent: "center",
+    paddingHorizontal: 3,
   },
   toggleOn: { backgroundColor: "#0D0D0D" },
   toggleThumb: {
-    width: 16, height: 16, borderRadius: 8, backgroundColor: "#fff",
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: "#fff",
     alignSelf: "flex-start",
   },
   toggleThumbOn: { alignSelf: "flex-end" },
 
   // Settings
   settingsRow: {
-    flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 13,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 13,
   },
   settingsRowBorder: { borderTopWidth: 1, borderTopColor: "#F5F5F5" },
   settingsIcon: { fontSize: 18, width: 26, textAlign: "center" },
@@ -429,13 +730,18 @@ const s = StyleSheet.create({
 
   // Buttons
   actionBtn: {
-    backgroundColor: "#0D0D0D", borderRadius: 16,
-    paddingVertical: 15, alignItems: "center",
+    backgroundColor: "#0D0D0D",
+    borderRadius: 16,
+    paddingVertical: 15,
+    alignItems: "center",
   },
   actionBtnText: { fontSize: 14, fontWeight: "700", color: "#fff" },
   outlineBtn: {
-    borderWidth: 1.5, borderColor: "#E8E8E8", borderRadius: 16,
-    paddingVertical: 15, alignItems: "center",
+    borderWidth: 1.5,
+    borderColor: "#E8E8E8",
+    borderRadius: 16,
+    paddingVertical: 15,
+    alignItems: "center",
   },
   outlineBtnText: { fontSize: 14, fontWeight: "600", color: "#424242" },
 });

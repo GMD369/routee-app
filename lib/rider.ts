@@ -1,3 +1,5 @@
+import { loadSession } from "./auth";
+import { API_BASE_URL } from "./config";
 import { HttpError, http } from "./http";
 
 export interface RiderPreferences {
@@ -24,6 +26,7 @@ export interface SavedLocation {
 export interface RiderProfile {
   id: string;
   profile_id: string;
+  avatar_url?: string | null;
   preferences: RiderPreferences;
   saved_locations: SavedLocation[];
   rating_avg: number;
@@ -99,6 +102,7 @@ const LOCATION_DELETE_BASE_ENDPOINTS = [
   "/riders/me/locations",
   "/me/locations",
 ] as const;
+const AVATAR_UPLOAD_ENDPOINTS = ["/riders/me/avatar", "/me/avatar"] as const;
 
 const DEFAULT_PREFERENCES: RiderPreferences = {
   uni_student: false,
@@ -251,6 +255,64 @@ export async function updateRiderPreferences(preferences: RiderPreferences) {
   return normalizeProfile(updated);
 }
 
+export async function uploadRiderAvatar(file: {
+  uri: string;
+  name: string;
+  type: string;
+}) {
+  const session = await loadSession();
+  if (!session?.access_token) {
+    throw new HttpError("Authentication required", { status: 401 });
+  }
+
+  const formData = new FormData();
+  formData.append("avatar", {
+    uri: file.uri,
+    name: file.name,
+    type: file.type,
+  } as never);
+
+  let lastError: HttpError | null = null;
+
+  for (const path of AVATAR_UPLOAD_ENDPOINTS) {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: formData,
+    });
+
+    const data = await response.json().catch(() => null);
+
+    if (response.ok) {
+      return data as { avatar_url?: string | null };
+    }
+
+    const detail =
+      typeof data === "object" &&
+      data &&
+      "detail" in data &&
+      typeof (data as { detail?: unknown }).detail === "string"
+        ? (data as { detail: string }).detail
+        : `Request failed with status ${response.status}`;
+
+    const error = new HttpError(detail, { status: response.status, data });
+
+    if (response.status === 404) {
+      lastError = error;
+      continue;
+    }
+
+    throw error;
+  }
+
+  throw (
+    lastError ||
+    new HttpError("Avatar upload endpoint not found", { status: 404 })
+  );
+}
+
 export async function deleteSavedLocationPair(pairId: string) {
   const id = pairId.trim();
   if (!id) {
@@ -274,4 +336,3 @@ export async function listSavedLocations(): Promise<
     (pair) => Boolean(pair.start_location) && Boolean(pair.end_location),
   );
 }
-
