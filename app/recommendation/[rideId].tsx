@@ -5,7 +5,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Path } from "react-native-svg";
 import { RideRecommendation } from "../../lib/recommendations";
 import { API_BASE_URL } from "../../lib/config";
-import { createMatchRequest } from "../../lib/match";
+import { createMatchRequest, checkMatchRequestExists } from "../../lib/match";
+import { useEffect, useState } from "react";
 
 function BackIcon() {
   return (
@@ -22,7 +23,6 @@ function formatDateTime(value?: string | null) {
   return date.toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
-import { useState } from "react";
 
 function AvatarImage({ uri, initials, style, textStyle }: { uri: string | null; initials: string; style: any; textStyle: any }) {
   const [error, setError] = useState(false);
@@ -59,8 +59,35 @@ export default function RecommendationDetailScreen() {
   
   const [isSending, setIsSending] = useState(false);
   const [chatId, setChatId] = useState<string | null>(ride?.chat_id || null);
+  const [isChecking, setIsChecking] = useState(true);
+
+  useEffect(() => {
+    async function checkExisting() {
+      if (!ride || !ride.id || !ride.driver_id) {
+        setIsChecking(false);
+        return;
+      }
+      try {
+        const res = await checkMatchRequestExists(ride.id, ride.driver_id);
+        if (res.exists) {
+          setChatId(res.chat_id || "placeholder-chat");
+        }
+      } catch (err) {
+        console.warn("Failed to check match request existence", err);
+      } finally {
+        setIsChecking(false);
+      }
+    }
+    
+    // Only check if we didn't already get chat_id from the initial recommendation object
+    if (!chatId) {
+      checkExisting();
+    } else {
+      setIsChecking(false);
+    }
+  }, [ride?.id, ride?.driver_id]);
   
-  if (!dataString) {
+  if (!dataString || !ride) {
     return (
       <SafeAreaView style={s.root}>
         <Text style={s.errorText}>No recommendation data found.</Text>
@@ -192,7 +219,11 @@ export default function RecommendationDetailScreen() {
       </ScrollView>
 
       <View style={s.footer}>
-        {chatId ? (
+        {isChecking ? (
+          <TouchableOpacity style={[s.primaryBtn, { opacity: 0.7 }]} disabled>
+            <ActivityIndicator color="#fff" />
+          </TouchableOpacity>
+        ) : chatId ? (
           <TouchableOpacity 
              style={s.primaryBtn} 
              onPress={() => Alert.alert("Coming Soon", "Chat interface will be available here!")}
