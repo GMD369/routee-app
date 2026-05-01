@@ -3,7 +3,8 @@
     "allow": [
       "WebFetch(domain:api.anthropic.com)",
       "Bash(npx expo *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Read(//f/Xevnex Technologies/Products/Routee/routee-backend/**)"
     ]
   }
 }

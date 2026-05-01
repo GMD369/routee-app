@@ -32,14 +32,6 @@ export interface RiderProfile {
   is_active: boolean;
 }
 
-export interface SavedLocationInput {
-  name: string;
-  address?: string;
-  latitude: number;
-  longitude: number;
-  is_default?: boolean;
-}
-
 export interface LocationPointInput {
   name: string;
   address?: string;
@@ -51,6 +43,15 @@ export interface SavedLocationPairCreateRequest {
   start_location: LocationPointInput;
   end_location: LocationPointInput;
   is_default?: boolean;
+  departure_time?: string | null; // "HH:MM" format
+  is_recurring?: boolean;
+  recurrence_days?: number[]; // 0=Sun … 6=Sat
+}
+
+export interface CommuteSchedule {
+  departure_time?: string | null; // "HH:MM:SS" from backend
+  is_recurring?: boolean;
+  recurrence_days?: number[]; // 0=Sun … 6=Sat
 }
 
 export interface SavedLocationPairResponse {
@@ -60,6 +61,27 @@ export interface SavedLocationPairResponse {
   start_location?: SavedLocation | null;
   end_location?: SavedLocation | null;
   saved_locations?: SavedLocation[];
+  // nested shape: { schedule: { departure_time, is_recurring, recurrence_days } }
+  schedule?: CommuteSchedule | null;
+  // flat shape: departure_time / is_recurring / recurrence_days at top level
+  departure_time?: string | null;
+  is_recurring?: boolean;
+  recurrence_days?: number[] | null;
+}
+
+/** Normalise schedule from either nested or flat backend response shape. */
+export function extractSchedule(
+  pair: SavedLocationPairResponse,
+): CommuteSchedule | null {
+  if (pair.schedule) return pair.schedule;
+  if (pair.departure_time != null || pair.is_recurring != null) {
+    return {
+      departure_time: pair.departure_time ?? null,
+      is_recurring: pair.is_recurring ?? false,
+      recurrence_days: pair.recurrence_days ?? [],
+    };
+  }
+  return null;
 }
 
 const PROFILE_ENDPOINTS = ["/riders/me", "/me"] as const;
@@ -70,10 +92,6 @@ const LOCATION_CREATE_ENDPOINTS = [
   "/me/locations",
 ] as const;
 const LOCATION_LIST_ENDPOINTS = [
-  "/riders/me/locations",
-  "/me/locations",
-] as const;
-const LOCATION_UPDATE_BASE_ENDPOINTS = [
   "/riders/me/locations",
   "/me/locations",
 ] as const;
@@ -233,79 +251,6 @@ export async function updateRiderPreferences(preferences: RiderPreferences) {
   return normalizeProfile(updated);
 }
 
-export async function saveOrUpdateSavedLocation(
-  profile: RiderProfile,
-  input: SavedLocationInput,
-) {
-  const normalizedName = input.name.trim().toLowerCase();
-  const existing = profile.saved_locations.find(
-    (location) => location.name.trim().toLowerCase() === normalizedName,
-  );
-
-  if (!existing) {
-    return tryPost<SavedLocation>(LOCATION_CREATE_ENDPOINTS, input);
-  }
-
-  const updatePaths = LOCATION_UPDATE_BASE_ENDPOINTS.map(
-    (basePath) => `${basePath}/${existing.id}`,
-  );
-
-  let lastError: unknown = null;
-
-  for (const path of updatePaths) {
-    try {
-      const patched = await http.patch<SavedLocation>(path, input);
-      return patched.data;
-    } catch (patchError) {
-      if (patchError instanceof HttpError) {
-        if (patchError.status === 404 || patchError.status === 405) {
-          try {
-            const put = await http.put<SavedLocation>(path, input);
-            return put.data;
-          } catch (putError) {
-            if (
-              putError instanceof HttpError &&
-              putError.status &&
-              putError.status !== 404 &&
-              putError.status !== 405
-            ) {
-              throw putError;
-            }
-            lastError = putError;
-            continue;
-          }
-        }
-
-        if (patchError.status && patchError.status !== 404) {
-          throw patchError;
-        }
-      }
-
-      lastError = patchError;
-    }
-  }
-
-  throw (
-    lastError ||
-    new HttpError("Saved location update endpoint not found", {
-      status: 404,
-    })
-  );
-}
-
-export async function deleteSavedLocation(locationId: string) {
-  const id = locationId.trim();
-  if (!id) {
-    throw new Error("Location ID is required.");
-  }
-
-  const deletePaths = LOCATION_DELETE_BASE_ENDPOINTS.map(
-    (basePath) => `${basePath}/${id}`,
-  );
-
-  await tryDelete(deletePaths);
-}
-
 export async function deleteSavedLocationPair(pairId: string) {
   const id = pairId.trim();
   if (!id) {
@@ -330,24 +275,3 @@ export async function listSavedLocations(): Promise<
   );
 }
 
-export async function createSavedLocation(
-  input: SavedLocationInput,
-): Promise<SavedLocation> {
-  return tryPost<SavedLocation>(LOCATION_CREATE_ENDPOINTS, input);
-}
-
-export async function getSavedLocationById(
-  locationId: string,
-): Promise<SavedLocation | null> {
-  const pairs = await tryGet<SavedLocationPairResponse[]>(
-    LOCATION_LIST_ENDPOINTS,
-  );
-  for (const pair of pairs) {
-    const locations = pair.saved_locations ?? [];
-    const found = locations.find((location) => location.id === locationId);
-    if (found) {
-      return found;
-    }
-  }
-  return null;
-}

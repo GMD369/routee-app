@@ -1,6 +1,6 @@
 import { useFocusEffect } from "@react-navigation/native";
 import { router, useLocalSearchParams } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
@@ -15,6 +15,10 @@ import {
     loadSession,
 } from "../../lib/auth";
 import { getMyDriverProfile, VerificationStatus } from "../../lib/driver";
+import {
+    listRecommendedRiders,
+    RiderRecommendation,
+} from "../../lib/recommendations";
 import { cancelRide, getMyRide, RideResponse } from "../../lib/ride";
 
 function formatDateTime(value?: string | null) {
@@ -49,6 +53,11 @@ export default function RideDetailScreen() {
   const [verificationStatus, setVerificationStatus] =
     useState<VerificationStatus | null>(null);
   const [ride, setRide] = useState<RideResponse | null>(null);
+  const [recommendedRiders, setRecommendedRiders] = useState<
+    RiderRecommendation[]
+  >([]);
+  const [loadingRecommendedRiders, setLoadingRecommendedRiders] =
+    useState(false);
 
   const hydrateRide = useCallback(async () => {
     if (!rideId) {
@@ -91,6 +100,40 @@ export default function RideDetailScreen() {
       void hydrateRide();
     }, [hydrateRide]),
   );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function hydrateRecommendedRiders() {
+      if (role !== "driver" || verificationStatus !== "verified" || !ride) {
+        setRecommendedRiders([]);
+        return;
+      }
+
+      setLoadingRecommendedRiders(true);
+      try {
+        const riders = await listRecommendedRiders(ride.id, 8);
+        if (!cancelled) {
+          setRecommendedRiders(riders);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setRecommendedRiders([]);
+          Alert.alert("Recommendations error", getApiErrorMessage(error));
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingRecommendedRiders(false);
+        }
+      }
+    }
+
+    void hydrateRecommendedRiders();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [role, ride, verificationStatus]);
 
   const isDriver = role === "driver";
   const isVerifiedDriver = verificationStatus === "verified";
@@ -247,6 +290,153 @@ export default function RideDetailScreen() {
               label="Updated At"
               value={formatDateTime(ride.updated_at)}
             />
+          </View>
+
+          <View className="mt-4 rounded-3xl border border-stone-200 bg-stone-50 p-5">
+            <View className="flex-row items-start justify-between gap-3">
+              <View className="flex-1">
+                <Text className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">
+                  Recommended riders
+                </Text>
+                <Text className="mt-1 text-base font-semibold text-slate-900">
+                  Best matches for this ride
+                </Text>
+              </View>
+              <View className="rounded-full bg-white px-3 py-1.5">
+                <Text className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  Top 8
+                </Text>
+              </View>
+            </View>
+
+            {loadingRecommendedRiders ? (
+              <View className="mt-4 flex-row items-center gap-3 rounded-2xl border border-stone-200 bg-white p-4">
+                <ActivityIndicator color="#0D0D0D" />
+                <Text className="text-sm text-slate-500">
+                  Loading rider matches...
+                </Text>
+              </View>
+            ) : recommendedRiders.length > 0 ? (
+              <View className="mt-4 gap-3">
+                {recommendedRiders.map((rider) => {
+                  const initials = rider.full_name
+                    .split(" ")
+                    .slice(0, 2)
+                    .map((part) => part[0] ?? "")
+                    .join("")
+                    .toUpperCase();
+                  const matchScore = Math.round(rider.match_score * 100);
+                  const matchBreakdown = rider.match_breakdown ?? {};
+
+                  return (
+                    <View
+                      key={rider.request_id ?? rider.rider_id}
+                      className="rounded-2xl border border-stone-200 bg-white p-4"
+                    >
+                      <View className="flex-row items-start justify-between gap-3">
+                        <View className="flex-row flex-1 items-center gap-3">
+                          <View className="h-12 w-12 items-center justify-center rounded-2xl bg-slate-900">
+                            <Text className="text-sm font-bold text-white">
+                              {initials || "R"}
+                            </Text>
+                          </View>
+                          <View className="flex-1">
+                            <Text className="text-base font-bold text-slate-900">
+                              {rider.full_name || "Rider"}
+                            </Text>
+                            <Text className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
+                              {rider.match_type}
+                            </Text>
+                          </View>
+                        </View>
+
+                        <View className="rounded-full bg-slate-900 px-3 py-1.5">
+                          <Text className="text-xs font-semibold uppercase tracking-[0.14em] text-white">
+                            {matchScore}%
+                          </Text>
+                        </View>
+                      </View>
+
+                      <View className="mt-4 gap-2 rounded-2xl bg-stone-50 p-3">
+                        <Text className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                          Route hints
+                        </Text>
+                        <Text className="text-sm font-semibold text-slate-900">
+                          {rider.virtual_pickup_location ??
+                            "Pickup not available"}
+                        </Text>
+                        <Text className="text-sm text-slate-500">to</Text>
+                        <Text className="text-sm font-semibold text-slate-900">
+                          {rider.virtual_dropoff_location ??
+                            "Dropoff not available"}
+                        </Text>
+                      </View>
+
+                      <View className="mt-4 flex-row flex-wrap gap-2">
+                        {rider.seats_requested != null ? (
+                          <View className="rounded-full bg-stone-100 px-3 py-1.5">
+                            <Text className="text-xs font-semibold text-slate-600">
+                              {rider.seats_requested} seat
+                              {rider.seats_requested === 1 ? "" : "s"} requested
+                            </Text>
+                          </View>
+                        ) : null}
+                        {rider.rating_avg != null ? (
+                          <View className="rounded-full bg-stone-100 px-3 py-1.5">
+                            <Text className="text-xs font-semibold text-slate-600">
+                              ⭐ {rider.rating_avg.toFixed(1)}
+                              {rider.rating_count
+                                ? ` (${rider.rating_count})`
+                                : ""}
+                            </Text>
+                          </View>
+                        ) : null}
+                        {rider.total_rides_taken != null ? (
+                          <View className="rounded-full bg-stone-100 px-3 py-1.5">
+                            <Text className="text-xs font-semibold text-slate-600">
+                              {rider.total_rides_taken} past rides
+                            </Text>
+                          </View>
+                        ) : null}
+                      </View>
+
+                      {rider.message ? (
+                        <Text className="mt-4 text-sm leading-6 text-slate-600">
+                          “{rider.message}”
+                        </Text>
+                      ) : null}
+
+                      {Object.keys(matchBreakdown).length > 0 ? (
+                        <View className="mt-4 flex-row flex-wrap gap-2">
+                          {Object.entries(matchBreakdown).map(
+                            ([key, value]) => (
+                              <View
+                                key={key}
+                                className="rounded-full border border-stone-200 bg-white px-3 py-1.5"
+                              >
+                                <Text className="text-xs font-semibold text-slate-600">
+                                  {key}: {value.toFixed(2)}
+                                </Text>
+                              </View>
+                            ),
+                          )}
+                        </View>
+                      ) : null}
+                    </View>
+                  );
+                })}
+              </View>
+            ) : (
+              <View className="mt-4 rounded-2xl border border-stone-200 bg-white p-4">
+                <Text className="text-sm font-semibold text-slate-900">
+                  No rider matches yet
+                </Text>
+                <Text className="mt-2 text-sm leading-6 text-slate-500">
+                  Once riders save locations or create requests for this ride,
+                  they will appear here.
+                </Text>
+              </View>
+            )}
           </View>
         </View>
       ) : (
