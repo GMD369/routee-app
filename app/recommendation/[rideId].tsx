@@ -226,7 +226,7 @@ export default function RecommendationDetailScreen() {
         ) : chatId ? (
           <TouchableOpacity 
              style={s.primaryBtn} 
-             onPress={() => Alert.alert("Coming Soon", "Chat interface will be available here!")}
+             onPress={() => router.push(`/chat/${chatId}`)}
           >
             <Text style={s.primaryBtnText}>Open Chat</Text>
           </TouchableOpacity>
