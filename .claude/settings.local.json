@@ -4,7 +4,9 @@
       "WebFetch(domain:api.anthropic.com)",
       "Bash(npx expo *)",
       "Bash(npx tsc *)",
-      "Read(//f/Xevnex Technologies/Products/Routee/routee-backend/**)"
+      "Read(//f/Xevnex Technologies/Products/Routee/routee-backend/**)",
+      "PowerShell(dir -Recurse \"F:\\\\Xevnex Technologies\\\\Products\\\\Routee\\\\routeeMobile\\\\app\" 2>$null | Where-Object { -not $_.PSIsContainer })",
+      "Bash(npm install *)"
     ]
   }
 }
