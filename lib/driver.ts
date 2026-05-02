@@ -162,6 +162,11 @@ export async function getMyDriverProfile() {
   return normalizeDriverProfile(profile);
 }
 
+export async function getDriverPreferences(driverId: string): Promise<DriverPreferences> {
+  const response = await http.get(`/riders/drivers/${driverId}/preferences`);
+  return response.data as DriverPreferences;
+}
+
 export async function updateMyDriverProfile(payload: DriverUpdateRequest) {
   const updated = await tryPut<DriverProfile>(
     DRIVER_PROFILE_ENDPOINTS,

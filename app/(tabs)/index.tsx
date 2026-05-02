@@ -8,16 +8,24 @@ import {
     Text,
     TouchableOpacity,
     View,
+    Modal,
+    Animated,
+    Dimensions,
 } from "react-native";
 import { Image } from "expo-image";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle, Path } from "react-native-svg";
+import React from "react";
 import {
     getApiErrorMessage,
     getPrimaryRole,
     loadSession,
     UserRole,
 } from "../../lib/auth";
+import {
+    getIncomingRequests,
+    IncomingRequest
+} from "../../lib/match";
 import {
     listRecommendedRides,
     RideRecommendation,
@@ -38,6 +46,31 @@ function UserSvg() {
     >
       <Path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
       <Circle cx={12} cy={7} r={4} />
+    </Svg>
+  );
+}
+
+function MenuSvg() {
+  return (
+    <Svg
+      width={20}
+      height={20}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#0D0D0D"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <Path d="M3 12h18M3 6h18M3 18h18" />
+    </Svg>
+  );
+}
+
+function CloseSvg() {
+  return (
+    <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="#0D0D0D" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M18 6L6 18M6 6l12 12" />
     </Svg>
   );
 }
@@ -76,6 +109,17 @@ export default function HomeTabScreen() {
   const [pairRecommendations, setPairRecommendations] = useState<Record<string, RideRecommendation[]>>({});
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [loadingPairs, setLoadingPairs] = useState<Record<string, boolean>>({});
+
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const slideAnim = React.useRef(new Animated.Value(-Dimensions.get("window").width)).current;
+
+  useEffect(() => {
+    Animated.timing(slideAnim, {
+      toValue: isSidebarOpen ? 0 : -Dimensions.get("window").width,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, [isSidebarOpen]);
 
   const hydrateHome = useCallback(async () => {
     try {
@@ -145,9 +189,17 @@ export default function HomeTabScreen() {
     <View style={s.root}>
       <SafeAreaView edges={["top"]} style={{ flex: 1 }}>
         <View style={s.topBar}>
-          <View>
-            <Text style={s.greeting}>Good morning 👋</Text>
-            <Text style={s.appName}>Musafee</Text>
+          <View style={s.topBarLeft}>
+            <TouchableOpacity
+              style={s.menuBtn}
+              onPress={() => setIsSidebarOpen(true)}
+            >
+              <MenuSvg />
+            </TouchableOpacity>
+            <View>
+              <Text style={s.greeting}>Good morning 👋</Text>
+              <Text style={s.appName}>Musafee</Text>
+            </View>
           </View>
           <TouchableOpacity
             style={s.profileBtn}
@@ -237,6 +289,48 @@ export default function HomeTabScreen() {
           </ScrollView>
         )}
       </SafeAreaView>
+
+      <Modal visible={isSidebarOpen} transparent={true} animationType="none">
+        <View style={s.modalOverlay}>
+          <TouchableOpacity 
+            style={s.modalBackground} 
+            activeOpacity={1} 
+            onPress={() => setIsSidebarOpen(false)} 
+          />
+          <Animated.View style={[s.sidebarContainer, { left: 0, position: 'absolute', height: '100%', transform: [{ translateX: slideAnim }] }]}>
+            <SafeAreaView style={s.sidebarSafeArea} edges={["top", "bottom"]}>
+              <View style={s.sidebarHeader}>
+                <Text style={s.sidebarTitle}>Menu</Text>
+                <TouchableOpacity onPress={() => setIsSidebarOpen(false)} style={s.closeBtn}>
+                  <CloseSvg />
+                </TouchableOpacity>
+              </View>
+              
+              <View style={s.sidebarMenu}>
+                <TouchableOpacity 
+                  style={s.menuItem}
+                  onPress={() => {
+                    setIsSidebarOpen(false);
+                    router.push("/incoming-requests");
+                  }}
+                >
+                  <Text style={s.menuItemText}>Incoming Requests</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  style={s.menuItem}
+                  onPress={() => {
+                    setIsSidebarOpen(false);
+                    router.push("/sent-requests");
+                  }}
+                >
+                  <Text style={s.menuItemText}>Sent Requests</Text>
+                </TouchableOpacity>
+              </View>
+            </SafeAreaView>
+          </Animated.View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -262,6 +356,22 @@ const s = StyleSheet.create({
     letterSpacing: -0.5,
     marginTop: 2,
   },
+  topBarLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
+  menuBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1.5,
+    borderColor: "#EBEBEB",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
   profileBtn: {
     width: 44,
     height: 44,
@@ -276,6 +386,62 @@ const s = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
+  },
+  modalOverlay: {
+    flex: 1,
+    flexDirection: "row",
+  },
+  modalBackground: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+  },
+  sidebarContainer: {
+    width: "85%",
+    maxWidth: 400,
+    backgroundColor: "#F8F9FA",
+    shadowColor: "#000",
+    shadowOffset: { width: -2, height: 0 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  sidebarSafeArea: {
+    flex: 1,
+  },
+  sidebarHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E0E0E0",
+    backgroundColor: "#fff",
+  },
+  sidebarTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#1A1A1A",
+  },
+  closeBtn: {
+    padding: 4,
+  },
+  sidebarMenu: {
+    padding: 16,
+  },
+  menuItem: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: "#fff",
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#EBEBEB",
+  },
+  menuItemText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1A1A1A",
   },
   scrollContent: {
     paddingHorizontal: 22,
