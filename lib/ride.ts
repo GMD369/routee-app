@@ -176,3 +176,32 @@ export async function cancelRide(rideId: string) {
 
   return data as RideResponse;
 }
+
+export async function deleteRide(rideId: string) {
+  const session = await loadSession();
+  if (!session?.access_token) {
+    throw new HttpError("Authentication required", { status: 401 });
+  }
+
+  const response = await fetch(`${API_BASE_URL}/rides/me/${rideId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+    const detail =
+      typeof data === "object" &&
+      data &&
+      "detail" in data &&
+      typeof (data as { detail?: unknown }).detail === "string"
+        ? (data as { detail: string }).detail
+        : `Delete failed with status ${response.status}`;
+
+    throw new HttpError(detail, { status: response.status, data });
+  }
+
+  return true;
+}

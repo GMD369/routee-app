@@ -15,7 +15,7 @@ import {
     loadSession,
 } from "../../lib/auth";
 import { getMyDriverProfile, VerificationStatus } from "../../lib/driver";
-import { cancelRide, getMyRide, RideResponse } from "../../lib/ride";
+import { cancelRide, deleteRide, getMyRide, RideResponse } from "../../lib/ride";
 
 function formatDateTime(value?: string | null) {
   if (!value) return "Not available";
@@ -95,6 +95,34 @@ export default function RideDetailScreen() {
   const isDriver = role === "driver";
   const isVerifiedDriver = verificationStatus === "verified";
   const canCancel = !!ride && !["completed", "cancelled"].includes(ride.status);
+
+  const handleDeleteRide = useCallback(() => {
+    if (!ride) return;
+
+    Alert.alert(
+      "Delete ride", 
+      "Are you sure you want to PERMANENTLY delete this ride? This action cannot be undone.", 
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            setLoading(true); // use main loading to block UI
+            try {
+              await deleteRide(ride.id);
+              Alert.alert("Deleted", "Your ride has been permanently removed.", [
+                { text: "OK", onPress: () => router.back() }
+              ]);
+            } catch (error) {
+              Alert.alert("Delete error", getApiErrorMessage(error));
+              setLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  }, [ride]);
 
   const handleCancelRide = useCallback(() => {
     if (!ride || !canCancel) {
@@ -198,6 +226,15 @@ export default function RideDetailScreen() {
                 </Text>
               </View>
             )}
+
+            <TouchableOpacity
+              className="mt-3 rounded-2xl border border-rose-200 bg-rose-600 px-5 py-4"
+              onPress={handleDeleteRide}
+            >
+              <Text className="text-center text-base font-bold text-white">
+                Permanently Delete Ride
+              </Text>
+            </TouchableOpacity>
           </View>
 
           <View className="gap-3">
