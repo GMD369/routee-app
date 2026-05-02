@@ -108,6 +108,25 @@ export function setupTokenRefreshListener(): () => void {
   }
 }
 
+/** Returns true if a token is currently registered with the backend. */
+export async function isNotificationsEnabled(): Promise<boolean> {
+  const token = await getCachedToken();
+  return token !== null;
+}
+
+/** Disable notifications — removes token from backend and clears local cache. */
+export async function disableNotifications(): Promise<void> {
+  const token = await getCachedToken();
+  if (!token) return;
+  try {
+    await http.delete(`/device-tokens/${encodeURIComponent(token)}`);
+  } catch (err) {
+    console.warn("[notifications] Failed to unregister token:", err);
+  } finally {
+    await SecureStore.deleteItemAsync(TOKEN_CACHE_KEY);
+  }
+}
+
 /** Call on logout — removes token from backend and clears local cache. */
 export async function clearNotificationToken(): Promise<void> {
   const token = await getCachedToken();

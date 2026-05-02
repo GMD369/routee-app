@@ -1,208 +1,219 @@
 import { Tabs } from "expo-router";
 import { useEffect, useState } from "react";
-import { View } from "react-native";
-import Svg, { Path } from "react-native-svg";
+import Svg, { Circle, Path, Rect } from "react-native-svg";
+import { MusafeeTabBar } from "../../components/TabBar";
 import { getPrimaryRole, loadSession, UserRole } from "../../lib/auth";
 
-function HomeIcon({ color }: { color: string }) {
+/* ── Icons — filled when focused, outline when not ───────────── */
+
+function HomeIcon({ color, focused }: { color: string; focused: boolean }) {
   return (
-    <Svg
-      width={22}
-      height={22}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={color}
-      strokeWidth={2}
-      strokeLinecap="round"
-    >
-      <Path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-      <Path d="M9 22V12h6v10" />
+    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z"
+        fill={focused ? color : "none"}
+        stroke={focused ? "none" : color}
+        strokeWidth={2}
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+      {focused ? (
+        <Rect x="9" y="14" width="6" height="7" rx="1" fill="#fff" />
+      ) : (
+        <Path
+          d="M9 21V13h6v8"
+          stroke={color}
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      )}
     </Svg>
   );
 }
 
-function VehicleIcon({ color }: { color: string }) {
+function LocationIcon({ color, focused }: { color: string; focused: boolean }) {
   return (
-    <Svg
-      width={22}
-      height={22}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={color}
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <Path d="M5 11h14l-1.2-4.2A2 2 0 0 0 16 5.4H8a2 2 0 0 0-1.8 1.4z" />
-      <Path d="M4 11v6h2" />
-      <Path d="M18 11v6h2" />
-      <Path d="M6 17a1.5 1.5 0 1 0 0 .01" />
-      <Path d="M18 17a1.5 1.5 0 1 0 0 .01" />
-      <Path d="M8 11v-2" />
-      <Path d="M16 11v-2" />
+    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+      {focused ? (
+        <>
+          <Path
+            d="M9 3L3 6v15l6-3 6 3 6-3V3l-6 3-6-3z"
+            fill={color}
+          />
+          <Path
+            d="M9 3v15M15 6v15"
+            stroke="#fff"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            opacity={0.6}
+          />
+        </>
+      ) : (
+        <Path
+          d="M9 3L3 6v15l6-3 6 3 6-3V3l-6 3-6-3zM9 3v15M15 6v15"
+          stroke={color}
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      )}
     </Svg>
   );
 }
 
-function RideIcon({ color }: { color: string }) {
+function VehicleIcon({ color, focused }: { color: string; focused: boolean }) {
   return (
-    <Svg
-      width={22}
-      height={22}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={color}
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <Path d="M17 18a2 2 0 1 0 4 0 2 2 0 0 0-4 0" />
-      <Path d="M3 18a2 2 0 1 0 4 0 2 2 0 0 0-4 0" />
-      <Path d="M1 4v6h14" />
-      <Path d="M15 10v6h2" />
-      <Path d="M17 4h2a2 2 0 0 1 2 2v4" />
+    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+      {focused ? (
+        <>
+          <Rect x="2" y="6" width="20" height="13" rx="3" fill={color} />
+          <Path d="M2 10h20" stroke="#fff" strokeWidth="1.5" />
+          <Rect x="5" y="13" width="4" height="3" rx="1" fill="#fff" opacity={0.7} />
+          <Rect x="10" y="13" width="4" height="3" rx="1" fill="#fff" opacity={0.7} />
+        </>
+      ) : (
+        <>
+          <Rect x="2" y="6" width="20" height="13" rx="3" stroke={color} strokeWidth="2" />
+          <Path d="M2 10h20" stroke={color} strokeWidth="1.5" />
+          <Rect x="5" y="13" width="4" height="3" rx="1" fill={color} opacity={0.5} />
+        </>
+      )}
     </Svg>
   );
 }
 
-function LocationIcon({ color }: { color: string }) {
+function RideIcon({ color, focused }: { color: string; focused: boolean }) {
   return (
-    <Svg
-      width={22}
-      height={22}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={color}
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <Path d="M12 21s6-5.2 6-11a6 6 0 1 0-12 0c0 5.8 6 11 6 11z" />
-      <Path d="M12 10.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z" />
+    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+      {focused ? (
+        <>
+          <Rect x="2" y="6" width="20" height="13" rx="3" fill={color} />
+          <Path d="M2 10h20" stroke="#fff" strokeWidth="1.5" />
+          <Rect x="5" y="13" width="4" height="3" rx="1" fill="#fff" opacity={0.7} />
+          <Rect x="10" y="13" width="4" height="3" rx="1" fill="#fff" opacity={0.7} />
+        </>
+      ) : (
+        <>
+          <Rect x="2" y="6" width="20" height="13" rx="3" stroke={color} strokeWidth="2" />
+          <Path d="M2 10h20" stroke={color} strokeWidth="1.5" />
+          <Rect x="5" y="13" width="4" height="3" rx="1" fill={color} opacity={0.5} />
+        </>
+      )}
     </Svg>
   );
 }
 
-function AccountIcon({ color }: { color: string }) {
+function AccountIcon({ color, focused }: { color: string; focused: boolean }) {
   return (
-    <Svg
-      width={22}
-      height={22}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={color}
-      strokeWidth={2}
-      strokeLinecap="round"
-    >
-      <Path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-      <Path d="M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />
+    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+      <Circle
+        cx="12"
+        cy="8"
+        r="4"
+        fill={focused ? color : "none"}
+        stroke={focused ? "none" : color}
+        strokeWidth="2"
+      />
+      <Path
+        d="M4 20c0-4 3.6-7 8-7s8 3 8 7"
+        fill={focused ? color : "none"}
+        stroke={focused ? "none" : color}
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
     </Svg>
   );
 }
+
+/* ── Layout ──────────────────────────────────────────────────── */
 
 export default function TabsLayout() {
   const [role, setRole] = useState<UserRole | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-
     async function initialize() {
       try {
         const session = await loadSession();
-        if (!cancelled) {
-          setRole(getPrimaryRole(session));
-        }
+        if (!cancelled) setRole(getPrimaryRole(session));
       } catch {
-        if (!cancelled) {
-          setRole(null);
-        }
+        if (!cancelled) setRole(null);
       }
     }
-
     void initialize();
-
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
-  if (role === null) {
-    return null;
-  }
+  if (role === null) return null;
 
   const isDriver = role === "driver";
 
+  if (isDriver) {
+    return (
+      <Tabs
+        tabBar={(props) => <MusafeeTabBar {...props} />}
+        screenOptions={{ headerShown: false }}
+      >
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: "Home",
+            tabBarIcon: ({ color, focused }) => (
+              <HomeIcon color={color} focused={focused} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="trips"
+          options={{
+            title: "Vehicles",
+            tabBarIcon: ({ color, focused }) => (
+              <VehicleIcon color={color} focused={focused} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="rides"
+          options={{
+            title: "Rides",
+            tabBarIcon: ({ color, focused }) => (
+              <RideIcon color={color} focused={focused} />
+            ),
+          }}
+        />
+        <Tabs.Screen name="location" options={{ tabBarButton: () => null }} />
+        <Tabs.Screen name="account" options={{ tabBarButton: () => null }} />
+      </Tabs>
+    );
+  }
+
   return (
     <Tabs
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarStyle: {
-          position: "absolute",
-          left: 24,
-          right: 24,
-          bottom: 20,
-          backgroundColor: "#ffffff",
-          borderColor: "#EBEBEB",
-          borderWidth: 1.5,
-          borderRadius: 24,
-          height: 68,
-          paddingTop: 8,
-          paddingBottom: 8,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.1,
-          shadowRadius: 16,
-          elevation: 12,
-        },
-        tabBarActiveTintColor: "#0D0D0D",
-        tabBarInactiveTintColor: "#C2C2C2",
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: "700",
-          letterSpacing: 0.3,
-          marginTop: 2,
-        },
-        tabBarIcon: ({ color, focused }) => (
-          <View
-            style={{
-              backgroundColor: focused ? "#F0F0F0" : "transparent",
-              borderRadius: 14,
-              paddingHorizontal: 14,
-              paddingVertical: 5,
-            }}
-          >
-            {route.name === "trips" ? (
-              <VehicleIcon color={color} />
-            ) : route.name === "rides" ? (
-              <RideIcon color={color} />
-            ) : route.name === "location" ? (
-              <LocationIcon color={color} />
-            ) : route.name === "account" ? (
-              <AccountIcon color={color} />
-            ) : (
-              <HomeIcon color={color} />
-            )}
-          </View>
-        ),
-      })}
+      tabBar={(props) => <MusafeeTabBar {...props} />}
+      screenOptions={{ headerShown: false }}
     >
-      <Tabs.Screen name="index" options={{ title: "Home" }} />
       <Tabs.Screen
-        name="trips"
-        options={{ title: "Vehicles", href: isDriver ? undefined : null }}
+        name="index"
+        options={{
+          title: "Home",
+          tabBarIcon: ({ color, focused }) => (
+            <HomeIcon color={color} focused={focused} />
+          ),
+        }}
       />
-      <Tabs.Screen
-        name="rides"
-        options={{ title: "Rides", href: isDriver ? undefined : null }}
-      />
+      <Tabs.Screen name="trips" options={{ tabBarButton: () => null }} />
+      <Tabs.Screen name="rides" options={{ tabBarButton: () => null }} />
       <Tabs.Screen
         name="location"
         options={{
           title: "Location",
-          tabBarButton: isDriver ? () => null : undefined,
+          tabBarIcon: ({ color, focused }) => (
+            <LocationIcon color={color} focused={focused} />
+          ),
         }}
       />
-      <Tabs.Screen name="account" options={{ href: null }} />
+      <Tabs.Screen name="account" options={{ tabBarButton: () => null }} />
     </Tabs>
   );
 }

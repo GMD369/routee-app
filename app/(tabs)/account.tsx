@@ -1,33 +1,94 @@
 import { Link, router } from "expo-router";
-import { useEffect, useState } from "react";
-import { Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { Alert, Linking, Pressable, ScrollView, Switch, Text, View } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import * as Device from "expo-device";
+import * as Notifications from "expo-notifications";
 import {
-    clearSession,
-    getApiErrorMessage,
-    getPrimaryRole,
-    loadSession,
-    UserRole,
+  clearSession,
+  getApiErrorMessage,
+  getPrimaryRole,
+  loadSession,
+  UserRole,
 } from "../../lib/auth";
-import { clearNotificationToken } from "../../lib/notifications";
+import {
+  clearNotificationToken,
+  disableNotifications,
+  initializeNotifications,
+  isNotificationsEnabled,
+} from "../../lib/notifications";
 
 export default function AccountTabScreen() {
   const [sessionChecked, setSessionChecked] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [role, setRole] = useState<UserRole | null>(null);
+  const [notificationsOn, setNotificationsOn] = useState(false);
+  const [togglingNotifications, setTogglingNotifications] = useState(false);
 
   useEffect(() => {
     void initialize();
   }, []);
+
+  // Refresh notification toggle state whenever screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      void isNotificationsEnabled().then(setNotificationsOn);
+    }, [])
+  );
 
   async function initialize() {
     try {
       const existingSession = await loadSession();
       setIsLoggedIn(Boolean(existingSession));
       setRole(getPrimaryRole(existingSession));
+      setNotificationsOn(await isNotificationsEnabled());
     } catch (error) {
       Alert.alert("Session error", getApiErrorMessage(error));
     } finally {
       setSessionChecked(true);
+    }
+  }
+
+  async function onToggleNotifications(value: boolean) {
+    if (togglingNotifications) return;
+    setTogglingNotifications(true);
+
+    try {
+      if (!value) {
+        // User turning OFF — remove token from backend
+        await disableNotifications();
+        setNotificationsOn(false);
+      } else {
+        // User turning ON — check OS permission first
+        if (!Device.isDevice) {
+          Alert.alert("Not supported", "Push notifications require a real device.");
+          return;
+        }
+
+        const { status } = await Notifications.getPermissionsAsync();
+
+        if (status === "denied") {
+          // OS permission was denied — must go to device settings
+          Alert.alert(
+            "Permission required",
+            "Notifications are blocked by your device. Open Settings to allow them.",
+            [
+              { text: "Cancel", style: "cancel" },
+              { text: "Open Settings", onPress: () => Linking.openSettings() },
+            ]
+          );
+          return;
+        }
+
+        // Permission granted or undetermined — register token
+        await initializeNotifications();
+        setNotificationsOn(await isNotificationsEnabled());
+      }
+    } catch (err) {
+      Alert.alert("Error", "Could not update notification settings.");
+      console.warn("[notifications] toggle error:", err);
+    } finally {
+      setTogglingNotifications(false);
     }
   }
 
@@ -127,6 +188,27 @@ export default function AccountTabScreen() {
             Go to Home
           </Text>
         </Pressable>
+
+        {/* Notifications toggle */}
+        <View className="rounded-2xl border border-stone-200 bg-stone-50 px-5 py-4 flex-row items-center justify-between">
+          <View className="flex-1">
+            <Text className="text-base font-semibold text-slate-700">
+              Push Notifications
+            </Text>
+            <Text className="text-xs text-slate-400 mt-0.5">
+              {notificationsOn
+                ? "You will receive ride and chat alerts"
+                : "Notifications are turned off"}
+            </Text>
+          </View>
+          <Switch
+            value={notificationsOn}
+            onValueChange={(v) => void onToggleNotifications(v)}
+            disabled={togglingNotifications}
+            trackColor={{ false: "#E5E7EB", true: "#0D0D0D" }}
+            thumbColor="#ffffff"
+          />
+        </View>
 
         <Pressable
           onPress={() => void onLogout()}
