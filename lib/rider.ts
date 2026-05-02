@@ -356,3 +356,27 @@ export async function listSavedLocationsSummary(): Promise<SavedLocationPairSumm
     "/me/locations/summary",
   ]);
 }
+
+export interface ActiveCommute {
+  match_request_id: string;
+  chat_id: string | null;
+  chat_status: string | null;
+  ride_id: string;
+  commute_id: string;
+  seats_reserved: number;
+  origin_address: string;
+  dest_address: string;
+  departure_time: string | null;
+  price_per_seat: number;
+  driver_id: string;
+  driver_name: string;
+  driver_avatar_url: string | null;
+  driver_rating_avg: number;
+}
+
+export async function listActiveCommutes(): Promise<ActiveCommute[]> {
+  return tryGet<ActiveCommute[]>([
+    "/riders/me/commutes",
+    "/me/commutes",
+  ]);
+}

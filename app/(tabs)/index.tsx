@@ -336,6 +336,16 @@ export default function HomeTabScreen() {
                 >
                   <Text style={s.menuItemText}>Chats</Text>
                 </TouchableOpacity>
+
+                <TouchableOpacity 
+                  style={s.menuItem}
+                  onPress={() => {
+                    setIsSidebarOpen(false);
+                    router.push("/active-commutes");
+                  }}
+                >
+                  <Text style={s.menuItemText}>Active Commutes</Text>
+                </TouchableOpacity>
               </View>
             </SafeAreaView>
           </Animated.View>
