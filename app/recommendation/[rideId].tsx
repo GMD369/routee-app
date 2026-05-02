@@ -84,8 +84,10 @@ export default function RecommendationDetailScreen() {
       }
       try {
         const res = await checkMatchRequestExists(ride.id, ride.driver_id);
-        if (res.exists) {
+        if (res.exists && res.match_request_status !== 'cancelled' && res.match_request_status !== 'rejected') {
           setChatId(res.chat_id || "placeholder-chat");
+        } else {
+          setChatId(null);
         }
       } catch (err) {
         console.warn("Failed to check match request existence", err);

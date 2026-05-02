@@ -12,9 +12,14 @@ export async function createMatchRequest(payload: MatchRequestCreate) {
   return response.data;
 }
 
-export async function checkMatchRequestExists(rideId: string, otherPartyId: string): Promise<{ exists: boolean; chat_id: string | null }> {
+export async function cancelMatchRequest(matchRequestId: string) {
+  const response = await http.post(`/match-requests/${matchRequestId}/cancel`, {});
+  return response.data;
+}
+
+export async function checkMatchRequestExists(rideId: string, otherPartyId: string): Promise<{ exists: boolean; chat_id: string | null; match_request_status?: string }> {
   const response = await http.get(`/match-requests/exists?ride_id=${rideId}&other_party_id=${otherPartyId}`);
-  return response.data as { exists: boolean; chat_id: string | null };
+  return response.data as { exists: boolean; chat_id: string | null; match_request_status?: string };
 }
 
 export interface IncomingRequest {

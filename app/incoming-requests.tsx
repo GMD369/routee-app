@@ -130,6 +130,17 @@ export default function IncomingRequestsScreen() {
                     </View>
                     <Text style={s.recommendationRouteDest} numberOfLines={1}>{req.dest_address ?? "Unknown Destination"}</Text>
                   </View>
+
+                  {req.status === 'cancelled' && (
+                    <View style={s.cancelledBadge}>
+                      <Text style={s.cancelledText}>Request Cancelled</Text>
+                    </View>
+                  )}
+                  {req.status === 'rejected' && (
+                    <View style={s.cancelledBadge}>
+                      <Text style={s.cancelledText}>Request Rejected</Text>
+                    </View>
+                  )}
                 </TouchableOpacity>
               );
             })
@@ -253,5 +264,18 @@ const s = StyleSheet.create({
     borderTopColor: "transparent",
     borderBottomColor: "transparent",
     borderLeftColor: "#BDBDBD",
+  },
+  cancelledBadge: {
+    marginTop: 14,
+    backgroundColor: "#FFECEC",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    alignSelf: "flex-start",
+  },
+  cancelledText: {
+    color: "#D32F2F",
+    fontSize: 12,
+    fontWeight: "700",
   },
 });

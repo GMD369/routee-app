@@ -1,9 +1,9 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Image } from "expo-image";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Path } from "react-native-svg";
-import { IncomingRequest } from "../lib/match";
+import { IncomingRequest, cancelMatchRequest } from "../lib/match";
 import { API_BASE_URL } from "../lib/config";
 import { useEffect, useState } from "react";
 import { getDriverPreferences, DriverPreferences } from "../lib/driver";
@@ -54,6 +54,7 @@ export default function RequestDetailScreen() {
   } catch (e) {}
 
   const [driverPrefs, setDriverPrefs] = useState<DriverPreferences | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   useEffect(() => {
     async function loadPreferences() {
@@ -84,6 +85,36 @@ export default function RequestDetailScreen() {
   
   const safePath = req.other_party_avatar_url?.startsWith('/') ? req.other_party_avatar_url.substring(1) : req.other_party_avatar_url;
   const avatarUri = safePath ? `${API_BASE_URL}/storage/files/${encodeURI(safePath)}` : null;
+
+  const isInitiator = req.initiator === req.my_role;
+
+  const handleCancel = async () => {
+    if (!req?.id) return;
+    Alert.alert(
+      "Cancel Request",
+      "Are you sure you want to cancel this request?",
+      [
+        { text: "No", style: "cancel" },
+        { 
+          text: "Yes, Cancel", 
+          style: "destructive",
+          onPress: async () => {
+            setIsCancelling(true);
+            try {
+              await cancelMatchRequest(req.id);
+              Alert.alert("Success", "Request has been cancelled.", [
+                { text: "OK", onPress: () => router.back() }
+              ]);
+            } catch (err: any) {
+              Alert.alert("Failed to cancel", err.message || "An error occurred.");
+            } finally {
+              setIsCancelling(false);
+            }
+          }
+        }
+      ]
+    );
+  };
 
   return (
     <SafeAreaView style={s.root} edges={["top"]}>
@@ -180,6 +211,16 @@ export default function RequestDetailScreen() {
             >
               <Text style={s.primaryBtnText}>Open Chat</Text>
             </TouchableOpacity>
+
+            {isInitiator && (
+              <TouchableOpacity 
+                style={s.cancelBtn} 
+                onPress={handleCancel}
+                disabled={isCancelling}
+              >
+                {isCancelling ? <ActivityIndicator color="#D32F2F" /> : <Text style={s.cancelBtnText}>Cancel Request</Text>}
+              </TouchableOpacity>
+            )}
           </View>
         )}
 
@@ -195,12 +236,28 @@ export default function RequestDetailScreen() {
             >
               <Text style={s.primaryBtnText}>Open Chat</Text>
             </TouchableOpacity>
+
+            {isInitiator && (
+              <TouchableOpacity 
+                style={s.cancelBtn} 
+                onPress={handleCancel}
+                disabled={isCancelling}
+              >
+                {isCancelling ? <ActivityIndicator color="#D32F2F" /> : <Text style={s.cancelBtnText}>Cancel Request</Text>}
+              </TouchableOpacity>
+            )}
           </View>
         )}
 
-        {(req.status === 'rejected' || req.status === 'cancelled') && (
+        {req.status === 'rejected' && (
           <View style={s.rejectedContainer}>
-            <Text style={s.rejectedText}>Close chat</Text>
+            <Text style={s.rejectedText}>Request Rejected</Text>
+          </View>
+        )}
+
+        {req.status === 'cancelled' && (
+          <View style={s.rejectedContainer}>
+            <Text style={s.rejectedText}>Request Cancelled</Text>
           </View>
         )}
       </View>
@@ -231,6 +288,9 @@ const s = StyleSheet.create({
   primaryBtn: { backgroundColor: "#0D0D0D", paddingVertical: 16, borderRadius: 16, alignItems: "center", width: "100%" },
   primaryBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
   
+  cancelBtn: { marginTop: 4, paddingVertical: 14, borderRadius: 12, alignItems: "center", width: "100%", borderWidth: 1, borderColor: "#FFECEC", backgroundColor: "#FFF5F5" },
+  cancelBtnText: { color: "#D32F2F", fontSize: 15, fontWeight: "700" },
+
   pendingText: { fontSize: 14, color: "#666", fontWeight: "600", textAlign: "center" },
   acceptedText: { fontSize: 15, color: "#2E7D32", fontWeight: "700", textAlign: "center" },
   

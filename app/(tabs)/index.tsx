@@ -326,6 +326,16 @@ export default function HomeTabScreen() {
                 >
                   <Text style={s.menuItemText}>Sent Requests</Text>
                 </TouchableOpacity>
+
+                <TouchableOpacity 
+                  style={s.menuItem}
+                  onPress={() => {
+                    setIsSidebarOpen(false);
+                    router.push("/chats");
+                  }}
+                >
+                  <Text style={s.menuItemText}>Chats</Text>
+                </TouchableOpacity>
               </View>
             </SafeAreaView>
           </Animated.View>
