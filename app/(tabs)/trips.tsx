@@ -38,7 +38,7 @@ export default function TripsTabScreen() {
   const [verificationStatus, setVerificationStatus] =
     useState<VerificationStatus | null>(null);
   const [vehicles, setVehicles] = useState<VehicleResponse[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const hydrateVehicles = useCallback(async () => {
     setLoading(true);
@@ -99,6 +99,11 @@ export default function TripsTabScreen() {
             with a driver account.
           </Text>
         </View>
+      ) : loading ? (
+        <View className="mt-7 flex-row items-center gap-3 rounded-2xl border border-stone-200 bg-stone-50 p-5">
+          <ActivityIndicator color="#0D0D0D" />
+          <Text className="text-sm text-slate-500">Loading vehicles...</Text>
+        </View>
       ) : !isVerifiedDriver ? (
         <View className="mt-7 rounded-2xl border border-amber-200 bg-amber-50 p-5">
           <Text className="text-lg font-bold text-slate-900">
@@ -142,14 +147,7 @@ export default function TripsTabScreen() {
               </TouchableOpacity>
             </View>
 
-            {loading ? (
-              <View className="flex-row items-center gap-3 rounded-2xl border border-stone-200 bg-stone-50 p-5">
-                <ActivityIndicator color="#0D0D0D" />
-                <Text className="text-sm text-slate-500">
-                  Loading vehicles...
-                </Text>
-              </View>
-            ) : vehicles.length > 0 ? (
+            {vehicles.length > 0 ? (
               vehicles.map((vehicle) => (
                 <TouchableOpacity
                   key={vehicle.id}

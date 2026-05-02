@@ -8,6 +8,7 @@ import {
     loadSession,
     UserRole,
 } from "../../lib/auth";
+import { clearNotificationToken } from "../../lib/notifications";
 
 export default function AccountTabScreen() {
   const [sessionChecked, setSessionChecked] = useState(false);
@@ -32,6 +33,7 @@ export default function AccountTabScreen() {
 
   async function onLogout() {
     try {
+      await clearNotificationToken();
       await clearSession();
       setIsLoggedIn(false);
       setRole(null);

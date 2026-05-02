@@ -1,8 +1,33 @@
+import "react-native-url-polyfill/auto";
 import "@/global.css";
 import { Stack } from "expo-router";
+import { useEffect } from "react";
+import { AppState, AppStateStatus } from "react-native";
 import "../lib/auth";
+import { initializeNotifications, setupTokenRefreshListener } from "../lib/notifications";
 
 export default function RootLayout() {
+  useEffect(() => {
+    // Initial token check on app launch
+    void initializeNotifications();
+
+    // Re-check token whenever app comes back to foreground
+    function onAppStateChange(next: AppStateStatus) {
+      if (next === "active") {
+        void initializeNotifications();
+      }
+    }
+    const appStateSub = AppState.addEventListener("change", onAppStateChange);
+
+    // Listen for Firebase token rotations
+    const removeRefreshListener = setupTokenRefreshListener();
+
+    return () => {
+      appStateSub.remove();
+      removeRefreshListener();
+    };
+  }, []);
+
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="onboarding" options={{ headerShown: false }} />

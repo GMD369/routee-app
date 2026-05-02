@@ -93,7 +93,9 @@ export default function ChatScreen() {
           });
         }
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        console.log("[realtime] status:", status, err ?? "");
+      });
 
     return () => {
       supabase.removeChannel(channel);

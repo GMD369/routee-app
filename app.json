@@ -10,10 +10,12 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.xevnex.routee"
+      "bundleIdentifier": "com.xevnex.musafee",
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
-      "package": "com.xevnex.routee",
+      "package": "com.xevnex.musafee",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -41,11 +43,25 @@
           }
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/musafee.png",
+          "color": "#0D0D0D",
+          "defaultChannel": "default"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "32b78209-57b5-422c-b714-5a1fe8a4691d"
+      }
     }
   }
 }

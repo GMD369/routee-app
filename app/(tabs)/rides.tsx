@@ -36,7 +36,7 @@ export default function RidesTabScreen() {
   const [verificationStatus, setVerificationStatus] =
     useState<VerificationStatus | null>(null);
   const [rides, setRides] = useState<RideResponse[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const hydrateScreen = useCallback(async () => {
     setLoading(true);
@@ -94,6 +94,11 @@ export default function RidesTabScreen() {
             Ride posting is available after signing in with a driver account.
           </Text>
         </View>
+      ) : loading ? (
+        <View className="mt-7 flex-row items-center gap-3 rounded-2xl border border-stone-200 bg-stone-50 p-5">
+          <ActivityIndicator color="#0D0D0D" />
+          <Text className="text-sm text-slate-500">Loading...</Text>
+        </View>
       ) : !isVerifiedDriver ? (
         <View className="mt-7 rounded-2xl border border-amber-200 bg-amber-50 p-5">
           <Text className="text-lg font-bold text-slate-900">
@@ -112,11 +117,6 @@ export default function RidesTabScreen() {
               Go to verification
             </Text>
           </TouchableOpacity>
-        </View>
-      ) : loading ? (
-        <View className="mt-7 flex-row items-center gap-3 rounded-2xl border border-stone-200 bg-stone-50 p-5">
-          <ActivityIndicator color="#0D0D0D" />
-          <Text className="text-sm text-slate-500">Loading...</Text>
         </View>
       ) : (
         <View className="mt-7 gap-4">

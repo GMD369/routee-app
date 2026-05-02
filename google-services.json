@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "176777939906",
+    "project_id": "routee-1a544",
+    "storage_bucket": "routee-1a544.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:176777939906:android:47985ad676dda29981e45b",
+        "android_client_info": {
+          "package_name": "com.xevnex.musafee"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDOkQtTWWxlgPIuAbp84wP6SWyumGtuR20"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
