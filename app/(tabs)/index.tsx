@@ -29,9 +29,12 @@ import {
 import {
     listRecommendedRides,
     RideRecommendation,
+    listRecommendedRiders,
+    RiderRecommendation,
 } from "../../lib/recommendations";
 import { listSavedLocationsSummary, SavedLocationPairSummary } from "../../lib/rider";
 import { API_BASE_URL } from "../../lib/config";
+import { listMyRides, RideResponse } from "../../lib/ride";
 
 function UserSvg() {
   return (
@@ -109,6 +112,12 @@ export default function HomeTabScreen() {
   const [pairRecommendations, setPairRecommendations] = useState<Record<string, RideRecommendation[]>>({});
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [loadingPairs, setLoadingPairs] = useState<Record<string, boolean>>({});
+  
+  // Driver state
+  const [driverRides, setDriverRides] = useState<RideResponse[]>([]);
+  const [loadingDriverRides, setLoadingDriverRides] = useState(false);
+  const [riderRecommendations, setRiderRecommendations] = useState<Record<string, RiderRecommendation[]>>({});
+  const [loadingRiders, setLoadingRiders] = useState<Record<string, boolean>>({});
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const slideAnim = React.useRef(new Animated.Value(-Dimensions.get("window").width)).current;
@@ -127,9 +136,16 @@ export default function HomeTabScreen() {
       const currentRole = getPrimaryRole(session);
       setRole(currentRole);
 
-      if (currentRole !== "rider") {
-        setPairsSummary([]);
-        setPairRecommendations({});
+      if (currentRole === "driver") {
+        setLoadingDriverRides(true);
+        try {
+          const rides = await listMyRides();
+          setDriverRides(rides);
+        } catch (error) {
+          Alert.alert("Error loading rides", getApiErrorMessage(error));
+        } finally {
+          setLoadingDriverRides(false);
+        }
         return;
       }
 
@@ -182,6 +198,40 @@ export default function HomeTabScreen() {
     };
   }, [pairsSummary]);
 
+  // Fetch recommended riders for all driver rides
+  useEffect(() => {
+    let cancelled = false;
+    if (driverRides.length === 0) return;
+
+    async function fetchAllRiders() {
+       setLoadingRiders(driverRides.reduce((acc, r) => ({...acc, [r.id]: true}), {}));
+       
+       for (const ride of driverRides) {
+          if (cancelled) break;
+          try {
+             const riders = await listRecommendedRiders(ride.id, 10);
+             if (!cancelled) {
+                setRiderRecommendations(prev => ({...prev, [ride.id]: riders}));
+             }
+          } catch {
+             if (!cancelled) {
+                setRiderRecommendations(prev => ({...prev, [ride.id]: []}));
+             }
+          } finally {
+             if (!cancelled) {
+                setLoadingRiders(prev => ({...prev, [ride.id]: false}));
+             }
+          }
+       }
+    }
+
+    void fetchAllRiders();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [driverRides]);
+
   const isDriver = role === "driver";
   const profileRoute = isDriver ? "/driver-profile" : "/profile";
 
@@ -208,6 +258,87 @@ export default function HomeTabScreen() {
             <UserSvg />
           </TouchableOpacity>
         </View>
+
+        {isDriver && (
+          <ScrollView contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
+            <Text style={s.mainHeading}>Recommended riders for your active rides</Text>
+
+            {loadingDriverRides ? (
+              <ActivityIndicator color="#0D0D0D" style={{ marginTop: 20 }} />
+            ) : driverRides.length === 0 ? (
+              <Text style={s.emptyStateText}>You don't have any active posted rides yet.</Text>
+            ) : (
+              driverRides.map((ride, idx) => {
+                const isLoadingRiders = loadingRiders[ride.id];
+                const riders = riderRecommendations[ride.id] || [];
+
+                return (
+                  <View key={ride.id ?? idx} style={s.pairSection}>
+                    <Text style={s.pairHeading}>
+                      {ride.origin_address || "Unknown"} → {ride.dest_address || "Unknown"}
+                    </Text>
+
+                    {isLoadingRiders ? (
+                      <ActivityIndicator color="#0D0D0D" style={{ marginVertical: 10, alignSelf: "flex-start" }} />
+                    ) : riders.length === 0 ? (
+                      <Text style={s.noRidesText}>No recommended riders found for this route.</Text>
+                    ) : (
+                      riders.map((rider, rIdx) => {
+                         const riderName = rider.full_name ?? "Rider";
+                         const initials = riderName.split(" ").slice(0, 2).map(w => w[0] ?? "").join("").toUpperCase();
+                         const pickup = rider.virtual_pickup_location ?? "Unknown";
+                         const dropoff = rider.virtual_dropoff_location ?? "Unknown";
+                         
+                         const safePath = rider.avatar_url?.startsWith('/') ? rider.avatar_url.substring(1) : rider.avatar_url;
+                         const avatarUri = safePath ? `${API_BASE_URL}/storage/files/${encodeURI(safePath)}` : null;
+
+                         const matchPercent = Math.round((rider.match_score || 0) * 100);
+
+                         return (
+                            <TouchableOpacity 
+                               key={rider.rider_id ?? rIdx} 
+                               style={s.recommendationCard}
+                               onPress={() => router.push({
+                                  pathname: `/rider-recommendation/${rider.rider_id}`,
+                                  params: { rideId: ride.id, data: JSON.stringify(rider) }
+                               })}
+                            >
+                               <View style={s.cardHeader}>
+                                  <AvatarImage 
+                                     uri={avatarUri} 
+                                     initials={initials} 
+                                     style={s.driverAvatar} 
+                                     textStyle={s.driverAvatarText} 
+                                  />
+                                  <View style={s.driverInfo}>
+                                     <Text style={s.driverName}>{riderName}</Text>
+                                     <Text style={s.departureTime}>Match: {matchPercent}%</Text>
+                                  </View>
+                               </View>
+
+                               <View style={s.cardBody}>
+                                  <View style={s.recommendationRouteWrap}>
+                                     <View style={s.routeTimeline}>
+                                        <View style={s.dotStart} />
+                                        <View style={s.verticalLine} />
+                                        <View style={s.dotEnd} />
+                                     </View>
+                                     <View style={s.routeTextContainer}>
+                                        <Text style={s.routeValue} numberOfLines={1}>{pickup}</Text>
+                                        <Text style={s.routeValue} numberOfLines={1}>{dropoff}</Text>
+                                     </View>
+                                  </View>
+                               </View>
+                            </TouchableOpacity>
+                         );
+                      })
+                    )}
+                  </View>
+                );
+              })
+            )}
+          </ScrollView>
+        )}
 
         {!isDriver && (
           <ScrollView contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
@@ -254,7 +385,7 @@ export default function HomeTabScreen() {
                                         }
                                      })}
                                   >
-                                     <View style={s.driverRow}>
+                                     <View style={s.cardHeader}>
                                         <AvatarImage 
                                            uri={avatarUri} 
                                            initials={initials} 
@@ -267,16 +398,18 @@ export default function HomeTabScreen() {
                                         </View>
                                      </View>
 
-                                     <View style={s.cardDivider} />
-                                     
-                                     <View style={s.recommendationRouteWrap}>
-                                        <Text style={s.recommendationRoute} numberOfLines={1}>{pickup}</Text>
-                                        <View style={s.routeArrowRow}>
-                                          <View style={s.routeDot} />
-                                          <View style={s.routeLine} />
-                                          <View style={s.routeArrowHead} />
+                                     <View style={s.cardBody}>
+                                        <View style={s.recommendationRouteWrap}>
+                                           <View style={s.routeTimeline}>
+                                              <View style={s.dotStart} />
+                                              <View style={s.verticalLine} />
+                                              <View style={s.dotEnd} />
+                                           </View>
+                                           <View style={s.routeTextContainer}>
+                                              <Text style={s.routeValue} numberOfLines={1}>{pickup}</Text>
+                                              <Text style={s.routeValue} numberOfLines={1}>{dropoff}</Text>
+                                           </View>
                                         </View>
-                                        <Text style={s.recommendationRouteDest} numberOfLines={1}>{dropoff}</Text>
                                      </View>
                                   </TouchableOpacity>
                                );
@@ -341,10 +474,14 @@ export default function HomeTabScreen() {
                   style={s.menuItem}
                   onPress={() => {
                     setIsSidebarOpen(false);
-                    router.push("/active-commutes");
+                    if (role === 'driver') {
+                       router.push("/active-rides");
+                    } else {
+                       router.push("/active-commutes");
+                    }
                   }}
                 >
-                  <Text style={s.menuItemText}>Active Commutes</Text>
+                  <Text style={s.menuItemText}>{role === 'driver' ? 'Active Rides' : 'Active Commutes'}</Text>
                 </TouchableOpacity>
               </View>
             </SafeAreaView>
@@ -498,9 +635,8 @@ const s = StyleSheet.create({
     marginTop: 4,
   },
   recommendationCard: {
-    marginBottom: 14,
-    padding: 16,
-    borderRadius: 18,
+    marginBottom: 16,
+    borderRadius: 20,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
     borderColor: "#ECECEC",
@@ -509,30 +645,69 @@ const s = StyleSheet.create({
     shadowOpacity: 0.04,
     shadowRadius: 8,
     elevation: 2,
+    overflow: "hidden",
   },
-  driverRow: {
+  cardHeader: {
     flexDirection: "row",
     alignItems: "center",
+    backgroundColor: "#0D0D0D",
+    padding: 16,
     gap: 12,
   },
+  cardBody: {
+    padding: 16,
+  },
   driverAvatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    backgroundColor: "#0D0D0D",
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.15)",
     alignItems: "center",
     justifyContent: "center",
   },
   driverAvatarText: { fontSize: 16, fontWeight: "800", color: "#FFFFFF" },
   driverInfo: { flex: 1, gap: 2 },
-  driverName: { fontSize: 14, fontWeight: "700", color: "#1A1A1A" },
-  departureTime: { fontSize: 12, color: "#6B6B6B", fontWeight: "600" },
+  driverName: { fontSize: 15, fontWeight: "700", color: "#FFFFFF" },
+  departureTime: { fontSize: 12, color: "rgba(255,255,255,0.6)", fontWeight: "600" },
   cardDivider: {
     height: 1,
     backgroundColor: "#F2F2F2",
     marginVertical: 14,
   },
-  recommendationRouteWrap: { gap: 6 },
+  recommendationRouteWrap: { flexDirection: "row", gap: 12 },
+  routeTimeline: {
+    alignItems: "center",
+    marginTop: 4,
+  },
+  dotStart: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: "#2E7D32",
+    backgroundColor: "#fff",
+  },
+  verticalLine: {
+    width: 2,
+    height: 20,
+    backgroundColor: "#F0F0F0",
+    marginVertical: 2,
+  },
+  dotEnd: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#D32F2F",
+  },
+  routeTextContainer: {
+    flex: 1,
+    gap: 12,
+  },
+  routeValue: {
+    fontSize: 13,
+    color: "#1A1A1A",
+    fontWeight: "600",
+  },
   recommendationRoute: {
     fontSize: 13,
     fontWeight: "600",
@@ -565,5 +740,51 @@ const s = StyleSheet.create({
     borderTopColor: "transparent",
     borderBottomColor: "transparent",
     borderLeftColor: "#BDBDBD",
+  },
+  driverRideCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#ECECEC",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  driverRideHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  driverRideTime: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#1A1A1A",
+  },
+  driverRideStatusBadge: {
+    backgroundColor: "#E8F5E9",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  driverRideStatusText: {
+    color: "#2E7D32",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  driverRideFooter: {
+    marginTop: 14,
+    backgroundColor: "#F9FAFB",
+    padding: 10,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  driverRideSeats: {
+    fontSize: 13,
+    color: "#666",
+    fontWeight: "600",
   },
 });

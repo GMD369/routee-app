@@ -99,14 +99,13 @@ export default function IncomingRequestsScreen() {
                   key={req.id ?? idx} 
                   style={s.recommendationCard}
                   onPress={() => {
-                    if (req.chat_id) {
-                      router.push(`/chat/${req.chat_id}`);
-                    } else {
-                      Alert.alert("Notice", "No chat available for this request.");
-                    }
+                    router.push({
+                      pathname: "/request-detail",
+                      params: { data: JSON.stringify(req) }
+                    });
                   }}
                 >
-                  <View style={s.driverRow}>
+                  <View style={s.cardHeader}>
                     <AvatarImage 
                       uri={avatarUri} 
                       initials={initials} 
@@ -119,28 +118,30 @@ export default function IncomingRequestsScreen() {
                     </View>
                   </View>
 
-                  <View style={s.cardDivider} />
-                  
-                  <View style={s.recommendationRouteWrap}>
-                    <Text style={s.recommendationRoute} numberOfLines={1}>{req.origin_address ?? "Unknown Origin"}</Text>
-                    <View style={s.routeArrowRow}>
-                      <View style={s.routeDot} />
-                      <View style={s.routeLine} />
-                      <View style={s.routeArrowHead} />
+                  <View style={s.cardBody}>
+                    <View style={s.recommendationRouteWrap}>
+                      <View style={s.routeTimeline}>
+                         <View style={s.dotStart} />
+                         <View style={s.verticalLine} />
+                         <View style={s.dotEnd} />
+                      </View>
+                      <View style={s.routeTextContainer}>
+                         <Text style={s.routeValue} numberOfLines={1}>{req.origin_address ?? "Unknown Origin"}</Text>
+                         <Text style={s.routeValue} numberOfLines={1}>{req.dest_address ?? "Unknown Destination"}</Text>
+                      </View>
                     </View>
-                    <Text style={s.recommendationRouteDest} numberOfLines={1}>{req.dest_address ?? "Unknown Destination"}</Text>
-                  </View>
 
-                  {req.status === 'cancelled' && (
-                    <View style={s.cancelledBadge}>
-                      <Text style={s.cancelledText}>Request Cancelled</Text>
-                    </View>
-                  )}
-                  {req.status === 'rejected' && (
-                    <View style={s.cancelledBadge}>
-                      <Text style={s.cancelledText}>Request Rejected</Text>
-                    </View>
-                  )}
+                    {req.status === 'cancelled' && (
+                      <View style={s.cancelledBadge}>
+                        <Text style={s.cancelledText}>Request Cancelled</Text>
+                      </View>
+                    )}
+                    {req.status === 'rejected' && (
+                      <View style={s.cancelledBadge}>
+                        <Text style={s.cancelledText}>Request Rejected</Text>
+                      </View>
+                    )}
+                  </View>
                 </TouchableOpacity>
               );
             })
@@ -197,9 +198,8 @@ const s = StyleSheet.create({
     marginTop: 20,
   },
   recommendationCard: {
-    marginBottom: 14,
-    padding: 16,
-    borderRadius: 18,
+    marginBottom: 16,
+    borderRadius: 20,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
     borderColor: "#ECECEC",
@@ -208,30 +208,69 @@ const s = StyleSheet.create({
     shadowOpacity: 0.04,
     shadowRadius: 8,
     elevation: 2,
+    overflow: "hidden",
   },
-  driverRow: {
+  cardHeader: {
     flexDirection: "row",
     alignItems: "center",
+    backgroundColor: "#0D0D0D",
+    padding: 16,
     gap: 12,
   },
+  cardBody: {
+    padding: 16,
+  },
   driverAvatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    backgroundColor: "#0D0D0D",
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.15)",
     alignItems: "center",
     justifyContent: "center",
   },
   driverAvatarText: { fontSize: 16, fontWeight: "800", color: "#FFFFFF" },
   driverInfo: { flex: 1, gap: 2 },
-  driverName: { fontSize: 14, fontWeight: "700", color: "#1A1A1A" },
-  departureTime: { fontSize: 12, color: "#6B6B6B", fontWeight: "600" },
+  driverName: { fontSize: 15, fontWeight: "700", color: "#FFFFFF" },
+  departureTime: { fontSize: 12, color: "rgba(255,255,255,0.6)", fontWeight: "600" },
   cardDivider: {
     height: 1,
     backgroundColor: "#F2F2F2",
     marginVertical: 14,
   },
-  recommendationRouteWrap: { gap: 6 },
+  recommendationRouteWrap: { flexDirection: "row", gap: 12 },
+  routeTimeline: {
+    alignItems: "center",
+    marginTop: 4,
+  },
+  dotStart: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: "#2E7D32",
+    backgroundColor: "#fff",
+  },
+  verticalLine: {
+    width: 2,
+    height: 20,
+    backgroundColor: "#F0F0F0",
+    marginVertical: 2,
+  },
+  dotEnd: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#D32F2F",
+  },
+  routeTextContainer: {
+    flex: 1,
+    gap: 12,
+  },
+  routeValue: {
+    fontSize: 13,
+    color: "#1A1A1A",
+    fontWeight: "600",
+  },
   recommendationRoute: {
     fontSize: 13,
     fontWeight: "600",

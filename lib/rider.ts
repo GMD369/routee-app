@@ -380,3 +380,29 @@ export async function listActiveCommutes(): Promise<ActiveCommute[]> {
     "/me/commutes",
   ]);
 }
+
+export interface DriverActiveRide {
+  ride_id: string;
+  origin_address: string;
+  dest_address: string;
+  departure_time: string | null;
+  total_seats: number;
+  available_seats: number;
+  ride_status: string;
+  passengers: {
+    match_request_id: string;
+    chat_id: string | null;
+    rider_id: string;
+    commute_id: string;
+    seats_reserved: number;
+    rider_name: string;
+    rider_avatar_url: string | null;
+    rider_rating_avg: number;
+  }[];
+}
+
+export async function listDriverActiveRides(): Promise<DriverActiveRide[]> {
+  return tryGet<DriverActiveRide[]>([
+    "/drivers/me/active-rides",
+  ]);
+}

@@ -17,6 +17,16 @@ export async function cancelMatchRequest(matchRequestId: string) {
   return response.data;
 }
 
+export async function acceptMatchRequest(matchRequestId: string) {
+  const response = await http.post(`/match-requests/${matchRequestId}/accept`, {});
+  return response.data;
+}
+
+export async function rejectMatchRequest(matchRequestId: string) {
+  const response = await http.post(`/match-requests/${matchRequestId}/reject`, {});
+  return response.data;
+}
+
 export async function checkMatchRequestExists(rideId: string, otherPartyId: string): Promise<{ exists: boolean; chat_id: string | null; match_request_status?: string }> {
   const response = await http.get(`/match-requests/exists?ride_id=${rideId}&other_party_id=${otherPartyId}`);
   return response.data as { exists: boolean; chat_id: string | null; match_request_status?: string };
@@ -51,7 +61,6 @@ export async function getIncomingRequests(status?: string): Promise<IncomingRequ
 export async function getSentRequests(status?: string): Promise<IncomingRequest[]> {
   const query = status ? `?status=${status}` : '';
   const response = await http.get(`/match-requests/sent${query}`);
-  console.log("=== RAW SENT REQUESTS FROM BACKEND ===", JSON.stringify(response.data, null, 2));
   return response.data as IncomingRequest[];
 }
 

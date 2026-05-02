@@ -21,6 +21,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import Svg, { Path } from "react-native-svg";
 
 interface RideFormState {
@@ -79,6 +80,11 @@ export default function CreateRideScreen() {
   const [originLoadingPredictions, setOriginLoadingPredictions] =
     useState(false);
   const [destLoadingPredictions, setDestLoadingPredictions] = useState(false);
+
+  // DateTime Picker states
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [hasTime, setHasTime] = useState(false);
 
   const [form, setForm] = useState<RideFormState>({
     originAddress: "",
@@ -298,6 +304,29 @@ export default function CreateRideScreen() {
       Alert.alert("Create error", getApiErrorMessage(error));
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const onDateChange = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(false);
+    if (selectedDate) {
+      setForm((prev) => {
+        const newDate = new Date(prev.departureTime);
+        newDate.setFullYear(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+        return { ...prev, departureTime: newDate };
+      });
+    }
+  };
+
+  const onTimeChange = (event: any, selectedDate?: Date) => {
+    setShowTimePicker(false);
+    if (selectedDate) {
+      setHasTime(true);
+      setForm((prev) => {
+        const newDate = new Date(prev.departureTime);
+        newDate.setHours(selectedDate.getHours(), selectedDate.getMinutes(), 0);
+        return { ...prev, departureTime: newDate };
+      });
     }
   };
 
@@ -563,26 +592,63 @@ export default function CreateRideScreen() {
       <View className="mt-8">
         <Text className="text-lg font-semibold text-slate-900">Schedule</Text>
 
-        <View className="mt-4">
-          <Text className="text-sm font-semibold text-slate-700">
-            Departure Time
-          </Text>
-          <Text className="mt-2 rounded-lg border border-stone-300 bg-stone-50 px-4 py-3 text-base text-slate-900">
-            {form.departureTime.toLocaleString()}
-          </Text>
-          <TouchableOpacity
-            className="mt-2 rounded-lg border border-slate-300 bg-slate-100 px-4 py-2"
-            onPress={() => {
-              Alert.alert(
-                "DateTime picker",
-                "DateTime picker not yet implemented.",
-              );
-            }}
-          >
-            <Text className="text-center text-sm font-semibold text-slate-700">
-              Change time
+        <View className="mt-4 gap-4">
+          <View>
+            <Text className="text-sm font-semibold text-slate-700">Date</Text>
+            <TouchableOpacity
+              className="mt-2 rounded-lg border border-stone-300 bg-white px-4 py-3"
+              onPress={() => setShowDatePicker(true)}
+            >
+              <Text className="text-base text-slate-900">
+                {form.departureTime.toLocaleDateString()}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View>
+            <Text className="text-sm font-semibold text-slate-700">
+              Time (Optional)
             </Text>
-          </TouchableOpacity>
+            <View className="mt-2 flex-row items-center gap-3">
+              <TouchableOpacity
+                className="flex-1 rounded-lg border border-stone-300 bg-white px-4 py-3"
+                onPress={() => setShowTimePicker(true)}
+              >
+                <Text className={`text-base ${hasTime ? "text-slate-900" : "text-slate-400"}`}>
+                  {hasTime
+                    ? form.departureTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    : "Select a time"}
+                </Text>
+              </TouchableOpacity>
+              {hasTime && (
+                <TouchableOpacity
+                  className="rounded-lg border border-red-200 bg-red-50 px-4 py-3"
+                  onPress={() => setHasTime(false)}
+                >
+                  <Text className="text-sm font-semibold text-red-600">Clear Time</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+
+          {showDatePicker && (
+            <DateTimePicker
+              value={form.departureTime}
+              mode="date"
+              display="default"
+              minimumDate={new Date()}
+              onChange={onDateChange}
+            />
+          )}
+
+          {showTimePicker && (
+            <DateTimePicker
+              value={form.departureTime}
+              mode="time"
+              display="default"
+              onChange={onTimeChange}
+            />
+          )}
         </View>
       </View>
 
