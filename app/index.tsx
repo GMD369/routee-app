@@ -73,7 +73,7 @@ export default function StartupRouter() {
         <View style={styles.center}>
           <View style={styles.logoBox}>
             <Image
-              source={require("../assets/images/musafee.png")}
+              source={require("../assets/images/icon.png")}
               style={styles.logo}
               resizeMode="contain"
             />
