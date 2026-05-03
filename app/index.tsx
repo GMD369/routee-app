@@ -1,9 +1,8 @@
 import { loadSession } from "@/lib/auth";
 import { isOnboardingCompleted } from "@/lib/onboardingStore";
-import { LinearGradient } from "expo-linear-gradient";
 import { Redirect } from "expo-router";
-import { useEffect, useState } from "react";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Animated, Easing, Image, StyleSheet, Text, View } from "react-native";
 
 type StartupRoute = "/onboarding" | "/login" | "/(tabs)";
 
@@ -16,6 +15,86 @@ async function withTimeout<T>(promise: Promise<T>, fallback: T): Promise<T> {
       setTimeout(() => resolve(fallback), ASYNC_GUARD_MS);
     }),
   ]);
+}
+
+// Single animated dot
+function BounceDot({ delay }: { delay: number }) {
+  const anim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.delay(delay),
+        // 0→40%: scale up, fade in (560ms)
+        Animated.parallel([
+          Animated.timing(anim, {
+            toValue: 1,
+            duration: 560,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ]),
+        // 40→80%: scale down, fade out (560ms)
+        Animated.parallel([
+          Animated.timing(anim, {
+            toValue: 0,
+            duration: 560,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ]),
+        // 80→100%: stay small (280ms)
+        Animated.delay(280),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, []);
+
+  const scale = anim.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] });
+  const opacity = anim.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] });
+
+  return (
+    <Animated.View
+      style={[styles.dot, { transform: [{ scale }], opacity }]}
+    />
+  );
+}
+
+// Single expanding ring
+function PulseRing({ delay }: { delay: number }) {
+  const anim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.delay(delay),
+        Animated.timing(anim, {
+          toValue: 1,
+          duration: 3000,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+        // reset instantly before next cycle
+        Animated.timing(anim, {
+          toValue: 0,
+          duration: 0,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, []);
+
+  const scale = anim.interpolate({ inputRange: [0, 1], outputRange: [0.3, 2.6] });
+  const opacity = anim.interpolate({ inputRange: [0, 1], outputRange: [0.5, 0] });
+
+  return (
+    <Animated.View
+      style={[styles.ring, { transform: [{ scale }], opacity }]}
+    />
+  );
 }
 
 export default function StartupRouter() {
@@ -64,35 +143,37 @@ export default function StartupRouter() {
 
   if (!route) {
     return (
-      <LinearGradient
-        colors={["#0D0D0D", "#1c1c1c"]}
-        start={{ x: 0.2, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.root}
-      >
+      <View style={styles.root}>
+        {/* Pulse rings — behind everything */}
+        <PulseRing delay={0} />
+        <PulseRing delay={800} />
+        <PulseRing delay={1600} />
+
+        {/* Center content */}
         <View style={styles.center}>
           <View style={styles.logoBox}>
             <Image
-              source={require("../assets/images/icon.png")}
-              style={styles.logo}
-              resizeMode="contain"
+              source={require("../assets/images/icon.jpeg")}
+              style={styles.logoImg}
+              resizeMode="cover"
             />
           </View>
+
           <Text style={styles.appName}>Musafee</Text>
           <Text style={styles.tagline}>Share the road. Split the cost.</Text>
-        </View>
 
-        <View style={styles.loadingSection}>
-          <View style={styles.dots}>
-            {([1, 0.3, 0.15] as number[]).map((opacity, i) => (
-              <View key={i} style={[styles.dot, { opacity }]} />
-            ))}
+          <View style={styles.divider} />
+
+          <View style={styles.dotsRow}>
+            <BounceDot delay={0} />
+            <BounceDot delay={180} />
+            <BounceDot delay={360} />
           </View>
-          <Text style={styles.loadingText}>LOADING</Text>
+          <Text style={styles.loadingLabel}>Loading</Text>
         </View>
 
-        <View style={styles.progressBar} />
-      </LinearGradient>
+        <Text style={styles.version}>Version 1.0.0</Text>
+      </View>
     );
   }
 
@@ -102,73 +183,96 @@ export default function StartupRouter() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
+    backgroundColor: "#0D0D0D",
     alignItems: "center",
+    justifyContent: "center",
   },
+
+  // Rings — absolute, centered at 38% from top
+  ring: {
+    position: "absolute",
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.07)",
+    top: "38%",
+    alignSelf: "center",
+  },
+
   center: {
-    flex: 1,
     alignItems: "center",
     justifyContent: "center",
   },
+
   logoBox: {
-    width: 96,
-    height: 96,
-    borderRadius: 28,
-    backgroundColor: "#ffffff",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 24,
+    width: 148,
+    height: 148,
+    borderRadius: 34,
+    overflow: "hidden",
+    backgroundColor: "#0D0D0D",
+    marginBottom: 32,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 20 },
+    shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.5,
-    shadowRadius: 30,
+    shadowRadius: 24,
     elevation: 20,
   },
-  logo: {
-    width: 72,
-    height: 72,
+  logoImg: {
+    width: "152%",
+    height: "152%",
+    marginLeft: "-26%",
+    marginTop: "-26%",
   },
+
   appName: {
-    fontSize: 40,
+    color: "#fff",
+    fontSize: 46,
     fontWeight: "800",
-    color: "#ffffff",
-    letterSpacing: -1.5,
-    marginBottom: 8,
+    letterSpacing: -2,
+    lineHeight: 46,
+    textAlign: "center",
+    marginBottom: 10,
   },
   tagline: {
+    color: "rgba(255,255,255,0.32)",
     fontSize: 15,
-    fontWeight: "400",
-    color: "rgba(255,255,255,0.4)",
-    letterSpacing: 0.5,
+    fontWeight: "500",
+    textAlign: "center",
   },
-  loadingSection: {
-    paddingBottom: 60,
-    alignItems: "center",
-    gap: 12,
+
+  divider: {
+    width: 32,
+    height: 1,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    marginVertical: 28,
   },
-  dots: {
+
+  dotsRow: {
     flexDirection: "row",
-    gap: 6,
+    gap: 8,
+    marginBottom: 10,
   },
   dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "#ffffff",
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: "rgba(255,255,255,0.45)",
   },
-  loadingText: {
+  loadingLabel: {
+    color: "rgba(255,255,255,0.15)",
     fontSize: 11,
     fontWeight: "600",
-    color: "rgba(255,255,255,0.2)",
-    letterSpacing: 1,
+    letterSpacing: 2,
     textTransform: "uppercase",
   },
-  progressBar: {
+
+  version: {
     position: "absolute",
-    bottom: 12,
-    height: 5,
-    width: "60%",
-    backgroundColor: "#ffffff",
-    borderRadius: 2.5,
-    opacity: 0.6,
+    bottom: 38,
+    color: "rgba(255,255,255,0.1)",
+    fontSize: 11,
+    fontWeight: "500",
+    textAlign: "center",
   },
 });
