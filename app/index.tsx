@@ -153,7 +153,7 @@ export default function StartupRouter() {
         <View style={styles.center}>
           <View style={styles.logoBox}>
             <Image
-              source={require("../assets/images/icon.jpeg")}
+              source={require("../assets/images/splash-icon.jpeg")}
               style={styles.logoImg}
               resizeMode="cover"
             />
@@ -229,6 +229,7 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 46,
     fontWeight: "800",
+    fontFamily: "PlusJakartaSans_800ExtraBold",
     letterSpacing: -2,
     lineHeight: 46,
     textAlign: "center",
@@ -238,6 +239,7 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.32)",
     fontSize: 15,
     fontWeight: "500",
+    fontFamily: "PlusJakartaSans_500Medium",
     textAlign: "center",
   },
 
@@ -263,6 +265,7 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.15)",
     fontSize: 11,
     fontWeight: "600",
+    fontFamily: "PlusJakartaSans_600SemiBold",
     letterSpacing: 2,
     textTransform: "uppercase",
   },
@@ -273,6 +276,7 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.1)",
     fontSize: 11,
     fontWeight: "500",
+    fontFamily: "PlusJakartaSans_500Medium",
     textAlign: "center",
   },
 });

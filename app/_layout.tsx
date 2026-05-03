@@ -1,25 +1,44 @@
 import "react-native-url-polyfill/auto";
 import "@/global.css";
+import {
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+  PlusJakartaSans_800ExtraBold,
+  useFonts,
+} from "@expo-google-fonts/plus-jakarta-sans";
 import { Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { AppState, AppStateStatus } from "react-native";
 import "../lib/auth";
 import { initializeNotifications, setupTokenRefreshListener } from "../lib/notifications";
 
+SplashScreen.preventAutoHideAsync();
+
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
+    PlusJakartaSans_800ExtraBold,
+  });
+
   useEffect(() => {
-    // Initial token check on app launch
+    if (fontsLoaded) void SplashScreen.hideAsync();
+  }, [fontsLoaded]);
+
+  useEffect(() => {
     void initializeNotifications();
 
-    // Re-check token whenever app comes back to foreground
     function onAppStateChange(next: AppStateStatus) {
       if (next === "active") {
         void initializeNotifications();
       }
     }
     const appStateSub = AppState.addEventListener("change", onAppStateChange);
-
-    // Listen for Firebase token rotations
     const removeRefreshListener = setupTokenRefreshListener();
 
     return () => {
@@ -27,6 +46,8 @@ export default function RootLayout() {
       removeRefreshListener();
     };
   }, []);
+
+  if (!fontsLoaded) return null;
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
