@@ -235,7 +235,6 @@ export default function RiderProfileScreen() {
           ? { ...current, avatar_url: uploaded.avatar_url ?? current.avatar_url }
           : current,
       );
-      Alert.alert("Saved", "Profile photo updated.");
     } catch (error) {
       Alert.alert("Upload failed", getApiErrorMessage(error));
     } finally {
@@ -282,7 +281,6 @@ export default function RiderProfileScreen() {
     try {
       const updatedProfile = await updateRiderPreferences(preferences);
       setProfile(updatedProfile);
-      Alert.alert("Saved", "Your rider preferences were updated.");
     } catch (error) {
       Alert.alert("Save failed", getApiErrorMessage(error));
     } finally {
@@ -487,45 +485,70 @@ export default function RiderProfileScreen() {
 
         {/* Settings card */}
         <View style={s.card}>
+          <TouchableOpacity style={s.settingsRow} onPress={() => {}} activeOpacity={0.7}>
+            <Text style={s.settingsIcon}>🔔</Text>
+            <Text style={s.settingsLabel}>Notifications</Text>
+            <ChevronIcon />
+          </TouchableOpacity>
+        </View>
+
+        {/* Privacy & Security card */}
+        <View style={s.card}>
+          <Text style={s.cardLabel}>PRIVACY & SECURITY</Text>
           {[
-            {
-              icon: "🔔",
-              label: "Notifications",
-              chevron: true,
-              onPress: () => {},
-            },
-            {
-              icon: "🔒",
-              label: "Privacy & Security",
-              chevron: true,
-              onPress: () => {},
-            },
-            {
-              icon: "❓",
-              label: "Help & Support",
-              chevron: true,
-              onPress: () => {},
-            },
-            {
-              icon: "🚪",
-              label: "Sign Out",
-              red: true,
-              onPress: () => void onLogout(),
-            },
+            { icon: "🔑", label: "Change Password", sub: "Update your account password" },
+            { icon: "📱", label: "Two-Factor Auth", sub: "Add an extra layer of security" },
+            { icon: "👁", label: "Profile Visibility", sub: "Control who sees your profile" },
+            { icon: "📋", label: "Data & Privacy", sub: "Manage your personal data" },
           ].map((item, i) => (
             <TouchableOpacity
               key={item.label}
               style={[s.settingsRow, i > 0 && s.settingsRowBorder]}
-              onPress={item.onPress}
+              onPress={() => {}}
               activeOpacity={0.7}
             >
               <Text style={s.settingsIcon}>{item.icon}</Text>
-              <Text style={[s.settingsLabel, item.red && s.settingsLabelRed]}>
-                {item.label}
-              </Text>
-              {item.chevron && <ChevronIcon />}
+              <View style={{ flex: 1 }}>
+                <Text style={s.settingsLabel}>{item.label}</Text>
+                <Text style={s.settingsSub}>{item.sub}</Text>
+              </View>
+              <ChevronIcon />
             </TouchableOpacity>
           ))}
+        </View>
+
+        {/* Help & Support card */}
+        <View style={s.card}>
+          <Text style={s.cardLabel}>HELP & SUPPORT</Text>
+          {[
+            { icon: "❓", label: "FAQs", sub: "Answers to common questions" },
+            { icon: "💬", label: "Contact Support", sub: "Chat or email our team" },
+            { icon: "📝", label: "Report an Issue", sub: "Let us know what went wrong" },
+            { icon: "⭐", label: "Rate the App", sub: "Share your experience" },
+            { icon: "ℹ️", label: "About Musafee", sub: "Version 1.0.0" },
+          ].map((item, i) => (
+            <TouchableOpacity
+              key={item.label}
+              style={[s.settingsRow, i > 0 && s.settingsRowBorder]}
+              onPress={() => {}}
+              activeOpacity={0.7}
+            >
+              <Text style={s.settingsIcon}>{item.icon}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={s.settingsLabel}>{item.label}</Text>
+                <Text style={s.settingsSub}>{item.sub}</Text>
+              </View>
+              <ChevronIcon />
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Sign Out card */}
+        <View style={s.card}>
+          <TouchableOpacity style={s.settingsRow} onPress={() => void onLogout()} activeOpacity={0.7}>
+            <Text style={s.settingsIcon}>🚪</Text>
+            <Text style={[s.settingsLabel, s.settingsLabelRed]}>Sign Out</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={{ height: 40 }} />
@@ -731,8 +754,9 @@ const s = StyleSheet.create({
   },
   settingsRowBorder: { borderTopWidth: 1, borderTopColor: "#F5F5F5" },
   settingsIcon: { fontSize: 18, width: 26, textAlign: "center" },
-  settingsLabel: { flex: 1, fontSize: 13, fontWeight: "600", color: "#0D0D0D" },
+  settingsLabel: { fontSize: 13, fontWeight: "600", color: "#0D0D0D" },
   settingsLabelRed: { color: "#EF4444" },
+  settingsSub: { fontSize: 11, color: "#9E9E9E", marginTop: 1 },
 
   // Buttons
   actionBtn: {

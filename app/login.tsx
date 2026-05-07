@@ -87,9 +87,7 @@ export default function LoginScreen() {
       await saveSession(session);
       // Register FCM token now that auth token is available
       void initializeNotifications();
-      Alert.alert("Login successful", "Welcome back to Musafee.", [
-        { text: "Continue", onPress: () => router.replace("/") },
-      ]);
+      router.replace("/");
     } catch (error) {
       Alert.alert("Login failed", getApiErrorMessage(error));
     } finally {

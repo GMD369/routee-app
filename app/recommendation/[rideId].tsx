@@ -135,12 +135,11 @@ export default function RecommendationDetailScreen() {
         commute_id: pairId,
         seats_requested: 1, // Defaulting to 1
       });
-      if (response && response.chat_id) {
-        setChatId(response.chat_id);
+      if (response && (response as any).chat_id) {
+        setChatId((response as any).chat_id);
       } else {
         setChatId("placeholder-chat");
       }
-      Alert.alert("Request Sent", "Your request to join this ride has been sent successfully! You can now chat with the driver.");
     } catch (error: any) {
       Alert.alert("Request Failed", error.message || "Could not send the request. Please try again.");
     } finally {

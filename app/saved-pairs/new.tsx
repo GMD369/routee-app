@@ -14,6 +14,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import Svg, { Circle, Line, Path, Rect } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getApiErrorMessage } from "../../lib/auth";
 import { consumePendingLocationResult } from "../../lib/locationPickerStore";
@@ -318,7 +319,6 @@ export default function NewSavedPairScreen() {
         is_recurring: isRecurring,
         recurrence_days: isRecurring ? selectedDays : [],
       });
-      Alert.alert("Saved", "Location pair saved.");
       clearFields();
       void loadSavedPairs();
     } catch (error) {
@@ -339,7 +339,6 @@ export default function NewSavedPairScreen() {
             try {
               await deleteSavedLocationPair(pairId);
               await loadSavedPairs();
-              Alert.alert("Deleted", "Saved place removed.");
             } catch (error) {
               Alert.alert("Delete failed", getApiErrorMessage(error));
             }
@@ -597,7 +596,17 @@ export default function NewSavedPairScreen() {
 function MapIcon() {
   return (
     <View style={s.mapIconWrap}>
-      <Text style={s.mapIconGlyph}>⌖</Text>
+      <Svg width={36} height={36} viewBox="0 0 36 36">
+        {/* Map background */}
+        <Rect x={2} y={2} width={32} height={32} rx={8} fill="#E8F0FE" />
+        {/* Road horizontal */}
+        <Line x1={4} y1={18} x2={32} y2={18} stroke="#BFCFE9" strokeWidth={3} strokeLinecap="round" />
+        {/* Road vertical */}
+        <Line x1={18} y1={4} x2={18} y2={32} stroke="#BFCFE9" strokeWidth={3} strokeLinecap="round" />
+        {/* Pin */}
+        <Path d="M18 8 C15.2 8 13 10.2 13 13 C13 16.5 18 22 18 22 C18 22 23 16.5 23 13 C23 10.2 20.8 8 18 8 Z" fill="#4F6FC2" />
+        <Circle cx={18} cy={13} r={2.2} fill="#fff" />
+      </Svg>
     </View>
   );
 }
@@ -994,5 +1003,22 @@ const s = StyleSheet.create({
     fontWeight: "700",
     color: "#7C776B",
     paddingTop: 3,
+  },
+  tabBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: "center",
+    borderRadius: 12,
+  },
+  tabBtnActive: {
+    backgroundColor: "#0D0D0D",
+  },
+  tabBtnText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#888",
+  },
+  tabBtnTextActive: {
+    color: "#fff",
   },
 });

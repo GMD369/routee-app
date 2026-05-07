@@ -143,8 +143,8 @@ export default function RiderRecommendationDetailScreen() {
       });
       Alert.alert("Invite Sent!", `You have invited ${rider.full_name} to your ride.`);
       setRider(prev => prev ? ({ ...prev, match_type: "requested" }) : null);
-      if (response && response.chat_id) {
-        setChatId(response.chat_id);
+      if (response && (response as any).chat_id) {
+        setChatId((response as any).chat_id);
       }
     } catch (error: any) {
       Alert.alert("Error sending invite", error?.message || "An unexpected error occurred");

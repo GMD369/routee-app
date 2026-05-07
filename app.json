@@ -41,6 +41,13 @@
           }
         }
       ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Musafee needs your location to show nearby rides and set your pickup point on the map.",
+          "locationWhenInUsePermission": "Musafee needs your location to show nearby rides and set your pickup point on the map."
+        }
+      ],
       "@react-native-community/datetimepicker",
       [
         "expo-notifications",

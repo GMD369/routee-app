@@ -155,7 +155,7 @@ export default function RideRecommendationsScreen() {
                    key={rider.rider_id ?? idx} 
                    style={s.riderCard}
                    onPress={() => router.push({
-                     pathname: `/rider-recommendation/${rider.rider_id}`,
+                     pathname: `/rider-recommendation/${rider.rider_id}` as any,
                      params: { rideId: rideId, data: JSON.stringify(rider) }
                    })}
                 >

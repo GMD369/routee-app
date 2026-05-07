@@ -160,7 +160,6 @@ export default function DriverProfileScreen() {
           ? { ...current, avatar_url: uploaded.avatar_url ?? current.avatar_url }
           : current,
       );
-      Alert.alert("Saved", "Profile photo updated.");
     } catch (error) {
       Alert.alert("Upload failed", getApiErrorMessage(error));
     } finally {
@@ -219,7 +218,6 @@ export default function DriverProfileScreen() {
       }));
       setBio(updated.bio || "");
       setPreferences(updated.preferences || preferences);
-      Alert.alert("Saved", "Driver profile updated successfully.");
     } catch (error) {
       Alert.alert("Update failed", getApiErrorMessage(error));
     } finally {

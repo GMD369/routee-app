@@ -9,6 +9,7 @@ import {
   useFonts,
 } from "@expo-google-fonts/plus-jakarta-sans";
 import { Stack } from "expo-router";
+import * as Location from "expo-location";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { AppState, AppStateStatus } from "react-native";
@@ -29,6 +30,11 @@ export default function RootLayout() {
   useEffect(() => {
     if (fontsLoaded) void SplashScreen.hideAsync();
   }, [fontsLoaded]);
+
+  useEffect(() => {
+    // Request location permission so maps open at the user's current location
+    void Location.requestForegroundPermissionsAsync();
+  }, []);
 
   useEffect(() => {
     void initializeNotifications();
