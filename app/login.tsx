@@ -169,11 +169,9 @@ export default function LoginScreen() {
 
         {/* Social buttons */}
         <View style={s.socialRow}>
-          {["G", "f", "in"].map((label) => (
-            <View key={label} style={s.socialBtn}>
-              <Text style={s.socialBtnText}>{label}</Text>
-            </View>
-          ))}
+          <View style={s.socialBtn}>
+            <Text style={s.socialBtnText}>Google</Text>
+          </View>
         </View>
 
         {/* Sign Up link */}
