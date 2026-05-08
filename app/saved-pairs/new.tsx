@@ -14,7 +14,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-import Svg, { Circle, Line, Path, Rect } from "react-native-svg";
+import Svg, { Circle, Path } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getApiErrorMessage } from "../../lib/auth";
 import { consumePendingLocationResult } from "../../lib/locationPickerStore";
@@ -593,19 +593,20 @@ export default function NewSavedPairScreen() {
   );
 }
 
-function MapIcon() {
+function MapIcon({ small = false }: { small?: boolean }) {
+  if (small) {
+    return (
+      <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+        <Path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#888" />
+        <Circle cx={12} cy={9} r={2.5} fill="#fff" />
+      </Svg>
+    );
+  }
   return (
     <View style={s.mapIconWrap}>
-      <Svg width={36} height={36} viewBox="0 0 36 36">
-        {/* Map background */}
-        <Rect x={2} y={2} width={32} height={32} rx={8} fill="#E8F0FE" />
-        {/* Road horizontal */}
-        <Line x1={4} y1={18} x2={32} y2={18} stroke="#BFCFE9" strokeWidth={3} strokeLinecap="round" />
-        {/* Road vertical */}
-        <Line x1={18} y1={4} x2={18} y2={32} stroke="#BFCFE9" strokeWidth={3} strokeLinecap="round" />
-        {/* Pin */}
-        <Path d="M18 8 C15.2 8 13 10.2 13 13 C13 16.5 18 22 18 22 C18 22 23 16.5 23 13 C23 10.2 20.8 8 18 8 Z" fill="#4F6FC2" />
-        <Circle cx={18} cy={13} r={2.2} fill="#fff" />
+      <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+        <Path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#fff" />
+        <Circle cx={12} cy={9} r={2.5} fill="#0D0D0D" />
       </Svg>
     </View>
   );
@@ -630,23 +631,23 @@ function LocationFieldCard({
 }) {
   return (
     <View style={s.fieldBlock}>
-      <View style={s.fieldHeader}>
-        <Text style={s.fieldTitle}>{title}</Text>
+      <Text style={s.fieldTitle}>{title}</Text>
+
+      <View style={s.inputRow}>
+        <View style={s.inputWrap}>
+          <TextInput
+            value={value}
+            onChangeText={onChangeText}
+            placeholder={placeholder}
+            placeholderTextColor="#9C9588"
+            style={s.input}
+            autoCorrect={false}
+            autoCapitalize="none"
+          />
+        </View>
         <Pressable onPress={onMapPress} style={s.mapButton} hitSlop={10}>
           <MapIcon />
         </Pressable>
-      </View>
-
-      <View style={s.inputWrap}>
-        <TextInput
-          value={value}
-          onChangeText={onChangeText}
-          placeholder={placeholder}
-          placeholderTextColor="#9C9588"
-          style={s.input}
-          autoCorrect={false}
-          autoCapitalize="none"
-        />
       </View>
 
       {point.searching ? (
@@ -664,9 +665,7 @@ function LocationFieldCard({
               onPress={() => onSelectSuggestion(item)}
               style={s.suggestionItem}
             >
-              <View style={s.suggestionIcon}>
-                <MapIcon />
-              </View>
+              <MapIcon small />
               <View style={s.suggestionBody}>
                 <Text style={s.suggestionMain} numberOfLines={1}>
                   {item.structured_formatting.main_text}
@@ -754,28 +753,22 @@ const s = StyleSheet.create({
     gap: 10,
   },
   fieldBlock: { gap: 10 },
-  fieldHeader: {
+  fieldTitle: { fontSize: 18, fontWeight: "900", color: "#111111" },
+  inputRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
+    gap: 10,
   },
-  fieldTitle: { fontSize: 18, fontWeight: "900", color: "#111111" },
   mapButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    backgroundColor: "#F0ECE4",
+    width: 50,
+    height: 50,
+    borderRadius: 16,
+    backgroundColor: "#0D0D0D",
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#E4DDD1",
+    flexShrink: 0,
   },
   mapIconWrap: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "#111111",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -786,6 +779,7 @@ const s = StyleSheet.create({
     marginTop: -1,
   },
   inputWrap: {
+    flex: 1,
     borderWidth: 1.5,
     borderColor: "#E9E3D8",
     borderRadius: 18,

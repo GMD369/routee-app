@@ -15,7 +15,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Svg, { Circle, Line, Path, Rect } from "react-native-svg";
+import Svg, { Circle, Path } from "react-native-svg";
 import { getApiErrorMessage } from "../../lib/auth";
 import { getPlaceDetails, getPlacePredictions, PlacePrediction } from "../../lib/geocoding";
 import { consumePendingLocationResult } from "../../lib/locationPickerStore";
@@ -27,13 +27,15 @@ import { Image } from "expo-image";
 
 function MapPinIcon() {
   return (
-    <Svg width={36} height={36} viewBox="0 0 36 36">
-      <Rect x={2} y={2} width={32} height={32} rx={8} fill="#E8F0FE" />
-      <Line x1={4} y1={18} x2={32} y2={18} stroke="#BFCFE9" strokeWidth={3} strokeLinecap="round" />
-      <Line x1={18} y1={4} x2={18} y2={32} stroke="#BFCFE9" strokeWidth={3} strokeLinecap="round" />
-      <Path d="M18 8 C15.2 8 13 10.2 13 13 C13 16.5 18 22 18 22 C18 22 23 16.5 23 13 C23 10.2 20.8 8 18 8 Z" fill="#4F6FC2" />
-      <Circle cx={18} cy={13} r={2.2} fill="#fff" />
-    </Svg>
+    <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: "#0D0D0D", alignItems: "center", justifyContent: "center" }}>
+      <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+        <Path
+          d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"
+          fill="#fff"
+        />
+        <Circle cx={12} cy={9} r={2.5} fill="#0D0D0D" />
+      </Svg>
+    </View>
   );
 }
 
@@ -190,14 +192,32 @@ export default function SearchScreen() {
   const [results, setResults] = useState<RideSearchResult[] | null>(null);
   const originTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const destTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mapPickerOpenedRef = useRef(false);
 
-  /* consume map-picker result */
+  function clearAll() {
+    const d = new Date(); d.setMinutes(0, 0, 0);
+    setOrigin(emptyPoint());
+    setDest(emptyPoint());
+    setDepartureTime(d);
+    setHasTime(false);
+    setGender("any");
+    setResults(null);
+    setSearching(false);
+  }
+
+  /* On focus: if returning from map-picker apply the pending result,
+     otherwise (tab switch / fresh open) clear everything. */
   useFocusEffect(useCallback(() => {
-    const r = consumePendingLocationResult();
-    if (!r) return;
-    const point: Partial<PointState> = { address: r.address, lat: r.latitude, lng: r.longitude, predictions: [], loading: false };
-    if (r.type === "search-origin") setOrigin(p => ({ ...p, ...point }));
-    else if (r.type === "search-dest") setDest(p => ({ ...p, ...point }));
+    if (mapPickerOpenedRef.current) {
+      mapPickerOpenedRef.current = false;
+      const r = consumePendingLocationResult();
+      if (!r) return;
+      const point: Partial<PointState> = { address: r.address, lat: r.latitude, lng: r.longitude, predictions: [], loading: false };
+      if (r.type === "search-origin") setOrigin(p => ({ ...p, ...point }));
+      else if (r.type === "search-dest") setDest(p => ({ ...p, ...point }));
+    } else {
+      clearAll();
+    }
   }, []));
 
   function onAddressChange(which: "origin" | "dest", text: string) {
@@ -224,6 +244,7 @@ export default function SearchScreen() {
   }
 
   function openMap(which: "origin" | "dest") {
+    mapPickerOpenedRef.current = true;
     router.push({ pathname: "/map-picker", params: { type: `search-${which}`, locationName: which === "origin" ? "Pickup" : "Destination" } });
   }
 
@@ -257,8 +278,13 @@ export default function SearchScreen() {
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {/* Header */}
         <View style={s.header}>
-          <Text style={s.title}>Search Rides</Text>
-          <Text style={s.subtitle}>Find a ride along your route</Text>
+          <View>
+            <Text style={s.title}>Search Rides</Text>
+            <Text style={s.subtitle}>Find a ride along your route</Text>
+          </View>
+          <TouchableOpacity style={s.clearAllBtn} onPress={clearAll}>
+            <Text style={s.clearAllText}>Clear</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Form card */}
@@ -427,9 +453,11 @@ const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#F8F9FA" },
   scroll: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 120 },
 
-  header: { marginBottom: 20 },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 20 },
   title: { fontSize: 26, fontWeight: "900", color: "#1A1A1A", letterSpacing: -0.5 },
   subtitle: { fontSize: 13, color: "#888", marginTop: 3 },
+  clearAllBtn: { backgroundColor: "#F5F5F5", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1, borderColor: "#EBEBEB" },
+  clearAllText: { fontSize: 13, fontWeight: "700", color: "#666" },
 
   formCard: {
     backgroundColor: "#fff", borderRadius: 24, padding: 20,
