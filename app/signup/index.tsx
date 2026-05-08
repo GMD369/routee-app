@@ -214,7 +214,7 @@ export default function SignupScreen() {
         role === "rider"
           ? "Your rider account is ready."
           : "Driver account created. Upload verification documents next.",
-        [{ text: "Continue", onPress: () => router.replace("/") }],
+        [{ text: "Continue", onPress: () => router.replace("/location-setup") }],
       );
     } catch (error) {
       Alert.alert("Signup failed", getApiErrorMessage(error));

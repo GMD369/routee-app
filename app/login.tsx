@@ -14,6 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle, Path, Rect } from "react-native-svg";
 import { getApiErrorMessage, login, saveSession } from "../lib/auth";
 import { initializeNotifications } from "../lib/notifications";
+import { getUserLocation } from "../lib/userLocation";
 
 /* ── Icons ─────────────────────────────────────────────────── */
 
@@ -85,9 +86,9 @@ export default function LoginScreen() {
     try {
       const session = await login({ email: email.trim(), password });
       await saveSession(session);
-      // Register FCM token now that auth token is available
       void initializeNotifications();
-      router.replace("/");
+      const loc = await getUserLocation();
+      router.replace(loc ? "/(tabs)" : "/location-setup");
     } catch (error) {
       Alert.alert("Login failed", getApiErrorMessage(error));
     } finally {

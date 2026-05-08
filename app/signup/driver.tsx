@@ -59,16 +59,7 @@ export default function DriverSignupScreen() {
 
       await saveSession(session);
 
-      Alert.alert(
-        "Signup successful",
-        "Driver account created. Upload verification documents next.",
-        [
-          {
-            text: "Continue",
-            onPress: () => router.replace("/"),
-          },
-        ],
-      );
+      router.replace("/location-setup");
     } catch (error) {
       Alert.alert("Signup failed", getApiErrorMessage(error));
     } finally {

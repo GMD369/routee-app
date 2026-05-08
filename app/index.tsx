@@ -1,10 +1,11 @@
 import { loadSession } from "@/lib/auth";
 import { isOnboardingCompleted } from "@/lib/onboardingStore";
+import { getUserLocation } from "@/lib/userLocation";
 import { Redirect } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { Animated, Easing, Image, StyleSheet, Text, View } from "react-native";
 
-type StartupRoute = "/onboarding" | "/login" | "/(tabs)";
+type StartupRoute = "/onboarding" | "/login" | "/(tabs)" | "/location-setup";
 
 const ASYNC_GUARD_MS = 2000;
 
@@ -118,7 +119,8 @@ export default function StartupRouter() {
         }
 
         if (session) {
-          setRoute("/(tabs)");
+          const loc = await withTimeout(getUserLocation(), null);
+          setRoute(loc ? "/(tabs)" : "/location-setup");
           return;
         }
 

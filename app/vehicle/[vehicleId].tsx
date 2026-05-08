@@ -112,7 +112,7 @@ export default function VehicleDetailScreen() {
     try {
       await deleteVehicle(vehicle.id);
       setShowDeleteModal(false);
-      router.replace("/");
+      router.replace("/(tabs)");
     } catch (error) {
       Alert.alert("Delete error", getApiErrorMessage(error));
       setDeleting(false);

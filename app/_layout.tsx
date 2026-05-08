@@ -80,6 +80,7 @@ export default function RootLayout() {
       <Stack.Screen name="ride/new" options={{ title: "Post Ride" }} />
       <Stack.Screen name="ride/[rideId]" options={{ title: "Ride" }} />
       <Stack.Screen name="ratings" options={{ title: "Ratings" }} />
+      <Stack.Screen name="location-setup" options={{ headerShown: false }} />
       <Stack.Screen
         name="map-picker"
         options={{ headerShown: false, presentation: "modal" }}

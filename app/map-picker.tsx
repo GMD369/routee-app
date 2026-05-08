@@ -17,11 +17,12 @@ import {
 import Svg, { Circle, Path } from "react-native-svg";
 import WebView, { WebViewMessageEvent } from "react-native-webview";
 import { setPendingLocationResult } from "../lib/locationPickerStore";
+import { getCachedLocation } from "../lib/userLocation";
 
 const MAPS_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_KEY ?? "";
 
-const FALLBACK_LAT = 24.8607;
-const FALLBACK_LNG = 67.0011;
+const DEFAULT_LAT = 24.8607;
+const DEFAULT_LNG = 67.0011;
 
 type MapMessage =
   | { type: "location"; lat: number; lng: number; address: string }
@@ -179,8 +180,9 @@ export default function MapPickerScreen() {
     }>();
 
   const hasCustomLocation = Boolean(initialLat && initialLng);
-  const initLat = hasCustomLocation ? Number(initialLat) : FALLBACK_LAT;
-  const initLng = hasCustomLocation ? Number(initialLng) : FALLBACK_LNG;
+  const userLoc = getCachedLocation();
+  const initLat = hasCustomLocation ? Number(initialLat) : (userLoc?.latitude ?? DEFAULT_LAT);
+  const initLng = hasCustomLocation ? Number(initialLng) : (userLoc?.longitude ?? DEFAULT_LNG);
 
   const locationType = type ?? "home";
   const label =

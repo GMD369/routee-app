@@ -55,12 +55,7 @@ export default function RiderSignupScreen() {
 
       await saveSession(session);
 
-      Alert.alert("Signup successful", "Your rider account is ready.", [
-        {
-          text: "Continue",
-          onPress: () => router.replace("/"),
-        },
-      ]);
+      router.replace("/location-setup");
     } catch (error) {
       Alert.alert("Signup failed", getApiErrorMessage(error));
     } finally {

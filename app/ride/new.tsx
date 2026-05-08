@@ -289,7 +289,7 @@ export default function CreateRideScreen() {
       };
 
       await createRide(payload);
-      router.replace("/");
+      router.replace("/(tabs)");
     } catch (error) {
       Alert.alert("Create error", getApiErrorMessage(error));
     } finally {
