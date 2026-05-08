@@ -34,6 +34,7 @@ import {
 import { listSavedLocationsSummary, SavedLocationPairSummary } from "../../lib/rider";
 import { API_BASE_URL } from "../../lib/config";
 import { listMyRides, RideResponse } from "../../lib/ride";
+import { getPendingRatings } from "../../lib/ratings";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -280,6 +281,7 @@ export default function HomeTabScreen() {
   const [riderRecommendations, setRiderRecommendations] = useState<Record<string, RiderRecommendation[]>>({});
   const [loadingRiders, setLoadingRiders] = useState<Record<string, boolean>>({});
   const [incomingCount, setIncomingCount] = useState(0);
+  const [pendingRatingsCount, setPendingRatingsCount] = useState(0);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const slideAnim = React.useRef(new Animated.Value(-SCREEN_WIDTH)).current;
 
@@ -302,6 +304,12 @@ export default function HomeTabScreen() {
       try {
         const reqs = await getIncomingRequests("pending");
         setIncomingCount(reqs.length);
+      } catch { /* silent */ }
+
+      // Fetch pending ratings count
+      try {
+        const pend = await getPendingRatings();
+        setPendingRatingsCount(pend.length);
       } catch { /* silent */ }
 
       if (currentRole === "driver") {
@@ -585,6 +593,7 @@ export default function HomeTabScreen() {
                 <SideMenuItem emoji="📤" label="Sent Requests" onPress={() => { closeSidebar(); router.push("/sent-requests"); }} />
                 <SideMenuItem emoji="💬" label="Chats" onPress={() => { closeSidebar(); router.push("/chats"); }} />
                 <SideMenuItem emoji={isDriver ? "🚗" : "🗺️"} label={isDriver ? "Active Rides" : "Active Commutes"} onPress={() => { closeSidebar(); router.push(isDriver ? "/active-rides" : "/active-commutes"); }} />
+                <SideMenuItem emoji="⭐" label="Ratings" badge={pendingRatingsCount} onPress={() => { closeSidebar(); router.push("/ratings"); }} />
 
                 <Text style={[s.sidebarGroupLabel, { marginTop: 16 }]}>ACCOUNT</Text>
                 <SideMenuItem emoji="👤" label={isDriver ? "Driver Profile" : "Rider Profile"} onPress={() => { closeSidebar(); router.push(profileRoute); }} />
