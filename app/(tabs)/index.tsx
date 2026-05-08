@@ -385,6 +385,8 @@ export default function HomeTabScreen() {
   const closeSidebar = () => setIsSidebarOpen(false);
   const openSidebar = () => setIsSidebarOpen(true);
 
+  if (role === null) return <View style={{ flex: 1, backgroundColor: "#F8F9FA" }} />;
+
   return (
     <View style={s.root}>
       <SafeAreaView edges={["top"]} style={{ flex: 1 }}>
