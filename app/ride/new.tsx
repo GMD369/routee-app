@@ -34,7 +34,6 @@ interface RideFormState {
   departureTime: Date;
   totalSeats: number;
   pricePerSeat: number;
-  priceNegotiable: boolean;
   genderPref: "male" | "female" | "any";
   vehicleId: string | null;
   pickupRadiusM: number;
@@ -81,8 +80,7 @@ export default function CreateRideScreen() {
     useState(false);
   const [destLoadingPredictions, setDestLoadingPredictions] = useState(false);
 
-  // DateTime Picker states
-  const [showDatePicker, setShowDatePicker] = useState(false);
+  // Time picker state
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [hasTime, setHasTime] = useState(false);
 
@@ -96,7 +94,6 @@ export default function CreateRideScreen() {
     departureTime: new Date(Date.now() + 3600000), // 1 hour from now
     totalSeats: 4,
     pricePerSeat: 0,
-    priceNegotiable: false,
     genderPref: "any",
     vehicleId: null,
     pickupRadiusM: 500,
@@ -276,10 +273,10 @@ export default function CreateRideScreen() {
         dest_address: form.destAddress.trim(),
         dest_lat: form.destLat,
         dest_lng: form.destLng,
-        departure_time: form.departureTime.toISOString(),
+        departure_time: `${form.departureTime.getHours().toString().padStart(2, "0")}:${form.departureTime.getMinutes().toString().padStart(2, "0")}:00`,
         total_seats: form.totalSeats,
         price_per_seat: form.pricePerSeat,
-        price_negotiable: form.priceNegotiable,
+        price_negotiable: false,
         gender_pref: form.genderPref,
         vehicle_id: form.vehicleId || undefined,
         pickup_radius_m: form.pickupRadiusM,
@@ -291,30 +288,12 @@ export default function CreateRideScreen() {
         notes: form.notes.trim() || undefined,
       };
 
-      const ride = await createRide(payload);
-      Alert.alert("Ride posted", "Your ride has been created successfully.", [
-        {
-          text: "OK",
-          onPress: () => {
-            router.replace("/");
-          },
-        },
-      ]);
+      await createRide(payload);
+      router.replace("/");
     } catch (error) {
       Alert.alert("Create error", getApiErrorMessage(error));
     } finally {
       setSubmitting(false);
-    }
-  };
-
-  const onDateChange = (event: any, selectedDate?: Date) => {
-    setShowDatePicker(false);
-    if (selectedDate) {
-      setForm((prev) => {
-        const newDate = new Date(prev.departureTime);
-        newDate.setFullYear(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
-        return { ...prev, departureTime: newDate };
-      });
     }
   };
 
@@ -592,54 +571,30 @@ export default function CreateRideScreen() {
       <View className="mt-8">
         <Text className="text-lg font-semibold text-slate-900">Schedule</Text>
 
-        <View className="mt-4 gap-4">
-          <View>
-            <Text className="text-sm font-semibold text-slate-700">Date</Text>
+        <View className="mt-4">
+          <Text className="text-sm font-semibold text-slate-700">
+            Departure Time
+          </Text>
+          <View className="mt-2 flex-row items-center gap-3">
             <TouchableOpacity
-              className="mt-2 rounded-lg border border-stone-300 bg-white px-4 py-3"
-              onPress={() => setShowDatePicker(true)}
+              className="flex-1 rounded-lg border border-stone-300 bg-white px-4 py-3"
+              onPress={() => setShowTimePicker(true)}
             >
-              <Text className="text-base text-slate-900">
-                {form.departureTime.toLocaleDateString()}
+              <Text className={`text-base ${hasTime ? "text-slate-900" : "text-slate-400"}`}>
+                {hasTime
+                  ? form.departureTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                  : "Select departure time"}
               </Text>
             </TouchableOpacity>
-          </View>
-
-          <View>
-            <Text className="text-sm font-semibold text-slate-700">
-              Time (Optional)
-            </Text>
-            <View className="mt-2 flex-row items-center gap-3">
+            {hasTime && (
               <TouchableOpacity
-                className="flex-1 rounded-lg border border-stone-300 bg-white px-4 py-3"
-                onPress={() => setShowTimePicker(true)}
+                className="rounded-lg border border-red-200 bg-red-50 px-4 py-3"
+                onPress={() => setHasTime(false)}
               >
-                <Text className={`text-base ${hasTime ? "text-slate-900" : "text-slate-400"}`}>
-                  {hasTime
-                    ? form.departureTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                    : "Select a time"}
-                </Text>
+                <Text className="text-sm font-semibold text-red-600">Clear</Text>
               </TouchableOpacity>
-              {hasTime && (
-                <TouchableOpacity
-                  className="rounded-lg border border-red-200 bg-red-50 px-4 py-3"
-                  onPress={() => setHasTime(false)}
-                >
-                  <Text className="text-sm font-semibold text-red-600">Clear Time</Text>
-                </TouchableOpacity>
-              )}
-            </View>
+            )}
           </View>
-
-          {showDatePicker && (
-            <DateTimePicker
-              value={form.departureTime}
-              mode="date"
-              display="default"
-              minimumDate={new Date()}
-              onChange={onDateChange}
-            />
-          )}
 
           {showTimePicker && (
             <DateTimePicker
@@ -714,26 +669,6 @@ export default function CreateRideScreen() {
             />
           </View>
 
-          <TouchableOpacity
-            className="mt-2 flex-row items-center gap-3 rounded-lg border border-stone-300 bg-white px-4 py-3"
-            onPress={() =>
-              setForm((prev) => ({
-                ...prev,
-                priceNegotiable: !prev.priceNegotiable,
-              }))
-            }
-          >
-            <View
-              className={`h-5 w-5 rounded-md border-2 ${
-                form.priceNegotiable
-                  ? "border-slate-900 bg-slate-900"
-                  : "border-slate-300 bg-white"
-              }`}
-            />
-            <Text className="text-base font-medium text-slate-900">
-              Price negotiable
-            </Text>
-          </TouchableOpacity>
         </View>
       </View>
 
