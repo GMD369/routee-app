@@ -87,6 +87,56 @@ export async function createRide(payload: RideCreateRequest) {
   return data as RideResponse;
 }
 
+export interface RideSearchResult extends RideResponse {
+  driver_full_name?: string | null;
+  driver_avatar_url?: string | null;
+  driver_rating_avg?: number | null;
+  driver_rating_count?: number | null;
+}
+
+export interface SearchRidesParams {
+  origin_lat: number;
+  origin_lng: number;
+  dest_lat: number;
+  dest_lng: number;
+  departure_time: string;
+  gender?: "male" | "female";
+}
+
+export async function searchRides(params: SearchRidesParams): Promise<RideSearchResult[]> {
+  const session = await loadSession();
+  if (!session?.access_token) {
+    throw new HttpError("Authentication required", { status: 401 });
+  }
+
+  const qs = new URLSearchParams({
+    origin_lat: String(params.origin_lat),
+    origin_lng: String(params.origin_lng),
+    dest_lat: String(params.dest_lat),
+    dest_lng: String(params.dest_lng),
+    departure_time: params.departure_time,
+  });
+  if (params.gender) qs.set("gender", params.gender);
+
+  const response = await fetch(`${API_BASE_URL}/search/rides?${qs.toString()}`, {
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+      "ngrok-skip-browser-warning": "1",
+    },
+  });
+
+  const data = await response.json().catch(() => null);
+  if (!response.ok) {
+    const detail =
+      typeof data === "object" && data && typeof (data as any).detail === "string"
+        ? (data as any).detail
+        : `Request failed with status ${response.status}`;
+    throw new HttpError(detail, { status: response.status, data });
+  }
+
+  return data as RideSearchResult[];
+}
+
 export async function listMyRides() {
   const session = await loadSession();
   if (!session?.access_token) {

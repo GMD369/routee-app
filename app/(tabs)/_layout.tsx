@@ -1,6 +1,6 @@
 import { Tabs } from "expo-router";
 import { useEffect, useState } from "react";
-import Svg, { Circle, Path, Rect } from "react-native-svg";
+import Svg, { Circle, Line, Path, Rect } from "react-native-svg";
 import { MusafeeTabBar } from "../../components/TabBar";
 import { getPrimaryRole, loadSession, UserRole } from "../../lib/auth";
 
@@ -104,6 +104,24 @@ function RideIcon({ color, focused }: { color: string; focused: boolean }) {
   );
 }
 
+function SearchIcon({ color, focused }: { color: string; focused: boolean }) {
+  return (
+    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+      <Circle
+        cx="10.5" cy="10.5" r="6.5"
+        fill={focused ? color : "none"}
+        stroke={focused ? "none" : color}
+        strokeWidth={2}
+      />
+      {focused ? (
+        <Line x1="15.5" y1="15.5" x2="21" y2="21" stroke={color} strokeWidth={2.5} strokeLinecap="round" />
+      ) : (
+        <Path d="M15.5 15.5L21 21" stroke={color} strokeWidth={2} strokeLinecap="round" />
+      )}
+    </Svg>
+  );
+}
+
 function AccountIcon({ color, focused }: { color: string; focused: boolean }) {
   return (
     <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
@@ -183,6 +201,7 @@ export default function TabsLayout() {
           }}
         />
         <Tabs.Screen name="location" options={{ tabBarButton: () => null }} />
+        <Tabs.Screen name="search" options={{ tabBarButton: () => null }} />
         <Tabs.Screen name="account" options={{ tabBarButton: () => null }} />
       </Tabs>
     );
@@ -207,9 +226,18 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="location"
         options={{
-          title: "Location",
+          title: "Saved",
           tabBarIcon: ({ color, focused }) => (
             <LocationIcon color={color} focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="search"
+        options={{
+          title: "Search",
+          tabBarIcon: ({ color, focused }) => (
+            <SearchIcon color={color} focused={focused} />
           ),
         }}
       />
