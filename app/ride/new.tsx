@@ -1,5 +1,4 @@
 import { getApiErrorMessage, getPrimaryRole, loadSession } from "@/lib/auth";
-import { getMyDriverProfile, VerificationStatus } from "@/lib/driver";
 import {
     getPlaceDetails,
     getPlacePredictions,
@@ -63,8 +62,6 @@ function MapIcon() {
 
 export default function CreateRideScreen() {
   const [role, setRole] = useState<"driver" | "rider" | null>(null);
-  const [verificationStatus, setVerificationStatus] =
-    useState<VerificationStatus | null>(null);
   const [vehicles, setVehicles] = useState<VehicleResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -193,15 +190,6 @@ export default function CreateRideScreen() {
       setRole(currentRole);
 
       if (currentRole !== "driver") {
-        setVerificationStatus(null);
-        setVehicles([]);
-        return;
-      }
-
-      const driverProfile = await getMyDriverProfile();
-      setVerificationStatus(driverProfile.verification_status);
-
-      if (driverProfile.verification_status !== "verified") {
         setVehicles([]);
         return;
       }
@@ -228,7 +216,6 @@ export default function CreateRideScreen() {
   );
 
   const isDriver = role === "driver";
-  const isVerifiedDriver = verificationStatus === "verified";
 
   const handleSubmit = async () => {
     // Validation
@@ -376,33 +363,6 @@ export default function CreateRideScreen() {
     );
   }
 
-  if (!isVerifiedDriver) {
-    return (
-      <ScrollView
-        className="flex-1 bg-white"
-        contentContainerClassName="px-6 pb-28 pt-16"
-      >
-        <Text className="text-3xl font-black text-slate-900">Post Ride</Text>
-        <View className="mt-7 rounded-2xl border border-amber-200 bg-amber-50 p-5">
-          <Text className="text-lg font-bold text-slate-900">
-            Please verify your account
-          </Text>
-          <Text className="mt-2 text-sm leading-6 text-slate-600">
-            Your driver account is not verified yet. Complete verification to
-            post rides.
-          </Text>
-          <TouchableOpacity
-            className="mt-5 rounded-2xl bg-slate-900 px-5 py-4"
-            onPress={() => router.push("/driver-verification")}
-          >
-            <Text className="text-center text-base font-semibold text-white">
-              Go to verification
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    );
-  }
 
   if (loading) {
     return (
