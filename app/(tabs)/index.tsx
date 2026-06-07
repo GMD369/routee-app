@@ -2,7 +2,6 @@ import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
     ActivityIndicator,
-    Alert,
     Dimensions,
     Modal,
     Animated,
@@ -17,7 +16,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle, Path, Rect, Line } from "react-native-svg";
 import React from "react";
 import {
-    getApiErrorMessage,
     getPrimaryRole,
     loadSession,
     UserRole,
@@ -274,10 +272,10 @@ export default function HomeTabScreen() {
   const [role, setRole] = useState<UserRole | null>(null);
   const [pairsSummary, setPairsSummary] = useState<SavedLocationPairSummary[]>([]);
   const [pairRecommendations, setPairRecommendations] = useState<Record<string, RideRecommendation[]>>({});
-  const [loadingSummary, setLoadingSummary] = useState(false);
+  const [loadingSummary, setLoadingSummary] = useState(true);
   const [loadingPairs, setLoadingPairs] = useState<Record<string, boolean>>({});
   const [driverRides, setDriverRides] = useState<RideResponse[]>([]);
-  const [loadingDriverRides, setLoadingDriverRides] = useState(false);
+  const [loadingDriverRides, setLoadingDriverRides] = useState(true);
   const [riderRecommendations, setRiderRecommendations] = useState<Record<string, RiderRecommendation[]>>({});
   const [loadingRiders, setLoadingRiders] = useState<Record<string, boolean>>({});
   const [incomingCount, setIncomingCount] = useState(0);
@@ -295,42 +293,34 @@ export default function HomeTabScreen() {
   }, [isSidebarOpen]);
 
   const hydrateHome = useCallback(async () => {
+    setLoadingDriverRides(true);
+    setLoadingSummary(true);
     try {
       const session = await loadSession();
       const currentRole = getPrimaryRole(session);
       setRole(currentRole);
 
-      // Fetch incoming request count
-      try {
-        const reqs = await getIncomingRequests("pending");
-        setIncomingCount(reqs.length);
-      } catch { /* silent */ }
-
-      // Fetch pending ratings count
-      try {
-        const pend = await getPendingRatings();
-        setPendingRatingsCount(pend.length);
-      } catch { /* silent */ }
+      try { const reqs = await getIncomingRequests("pending"); setIncomingCount(reqs.length); } catch { /* silent */ }
+      try { const pend = await getPendingRatings(); setPendingRatingsCount(pend.length); } catch { /* silent */ }
 
       if (currentRole === "driver") {
-        setLoadingDriverRides(true);
         try {
           const rides = await listMyRides();
           setDriverRides(rides);
-        } catch (error) {
-          Alert.alert("Error loading rides", getApiErrorMessage(error));
-        } finally {
+        } catch { /* silent — new driver has no rides yet */ } finally {
           setLoadingDriverRides(false);
         }
         return;
       }
 
-      setLoadingSummary(true);
-      const summaries = await listSavedLocationsSummary();
-      setPairsSummary(summaries);
-    } catch (error) {
-      Alert.alert("Home error", getApiErrorMessage(error));
-    } finally {
+      try {
+        const summaries = await listSavedLocationsSummary();
+        setPairsSummary(summaries);
+      } catch { /* silent — new rider has no locations yet */ } finally {
+        setLoadingSummary(false);
+      }
+    } catch {
+      setLoadingDriverRides(false);
       setLoadingSummary(false);
     }
   }, []);
@@ -385,8 +375,6 @@ export default function HomeTabScreen() {
   const closeSidebar = () => setIsSidebarOpen(false);
   const openSidebar = () => setIsSidebarOpen(true);
 
-  if (role === null) return <View style={{ flex: 1, backgroundColor: "#F8F9FA" }} />;
-
   return (
     <View style={s.root}>
       <SafeAreaView edges={["top"]} style={{ flex: 1 }}>
@@ -406,15 +394,17 @@ export default function HomeTabScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Role pill */}
-        <View style={s.rolePillWrap}>
-          <View style={[s.rolePill, isDriver && s.rolePillDriver]}>
-            <Text style={[s.rolePillText, isDriver && s.rolePillTextDriver]}>{isDriver ? "🚗  Driver View" : "🧑‍💼  Rider View"}</Text>
+        {/* Role pill — only once role is known */}
+        {role !== null && (
+          <View style={s.rolePillWrap}>
+            <View style={[s.rolePill, isDriver && s.rolePillDriver]}>
+              <Text style={[s.rolePillText, isDriver && s.rolePillTextDriver]}>{isDriver ? "🚗  Driver View" : "🧑‍💼  Rider View"}</Text>
+            </View>
           </View>
-        </View>
+        )}
 
         {/* Driver View */}
-        {isDriver && (
+        {role !== null && isDriver && (
           <ScrollView contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
             <Text style={s.sectionLabel}>RECOMMENDED RIDERS</Text>
             <Text style={s.mainHeading}>Riders for your active routes</Text>
@@ -488,7 +478,7 @@ export default function HomeTabScreen() {
         )}
 
         {/* Rider View */}
-        {!isDriver && (
+        {role !== null && !isDriver && (
           <ScrollView contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
             <Text style={s.sectionLabel}>RECOMMENDED RIDES</Text>
             <Text style={s.mainHeading}>Rides for your saved routes</Text>

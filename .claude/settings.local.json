@@ -10,7 +10,12 @@
       "Bash(python -c \"import gzip; data = gzip.decompress\\(open\\('webfetch-1777728487094-kjen8r.bin','rb'\\).read\\(\\)\\); open\\('design.html','wb'\\).write\\(data\\)\")",
       "PowerShell(python -c \"import gzip; data = gzip.decompress\\(open\\(r'C:\\\\Users\\\\GMD\\\\.claude\\\\projects\\\\F--Xevnex-Technologies-Products-Routee-routeeMobile\\\\be3f5bd8-9233-4209-8d92-fbe1a1690957\\\\tool-results\\\\webfetch-1777728487094-kjen8r.bin','rb'\\).read\\(\\)\\); open\\(r'C:\\\\Users\\\\GMD\\\\.claude\\\\projects\\\\F--Xevnex-Technologies-Products-Routee-routeeMobile\\\\be3f5bd8-9233-4209-8d92-fbe1a1690957\\\\tool-results\\\\design.html','wb'\\).write\\(data\\); print\\('done', len\\(data\\)\\)\")",
       "Bash(Get-ChildItem -Path \"F:\\\\Xevnex Technologies\\\\Products\\\\Routee\\\\routeeMobile\\\\app\" -Recurse)",
-      "Bash(Select-Object FullName)"
+      "Bash(Select-Object FullName)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(Get-ChildItem app *)",
+      "Bash(python *)"
     ]
   }
 }
